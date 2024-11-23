@@ -863,42 +863,56 @@
     </div>
     <script>
 
-const gameState = {
-    sessionKey: null,
-    username: null,
-    currentQuiz: null,
-    hasCompletedQuiz: false
-};
+        const gameState = {
+            sessionKey: null,
+            username: null,
+            currentQuiz: null,
+            hasCompletedQuiz: false
+        };
 
-// At the top of our game code:
-const CONFIG = {
-    // Default to production URLs
-    API_BASE_URL: 'https://example.com',
-    QUIZ_FILES_URL: 'https://example.com',
-};
+        // At the top of our game code:
+        const CONFIG = {
+            // Default to production URLs
+            API_BASE_URL: 'https://example.com',
+            QUIZ_FILES_URL: 'https://example.com',
+            FORCED_QUIZ: null  // Will be set if specified in URL
+        };
 
-// Look for URL parameters that override these
-function initializeConfig() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // Allow overriding API base URL
-    if (urlParams.get('apiUrl')) {
-        CONFIG.API_BASE_URL = urlParams.get('apiUrl');
-    }
-    
-    // Allow overriding quiz files location
-    if (urlParams.get('quizUrl')) {
-        CONFIG.QUIZ_FILES_URL = urlParams.get('quizUrl');
-    }
-}
+        // Look for URL parameters that override these
+        function initializeConfig() {
+            const urlParams = new URLSearchParams(window.location.search);
 
-// Update our API_ENDPOINTS to use the configured base URL
-const API_ENDPOINTS = {
-    checkCompletion: `${CONFIG.API_BASE_URL}/api/check-completion`,
-    postScore: `${CONFIG.API_BASE_URL}/api/post-score`,
-    getLeaderboard: `${CONFIG.API_BASE_URL}/api/leaderboard`,
-    socialPost: `${CONFIG.API_BASE_URL}/api/social-post`
-};
+            // Allow overriding API base URL
+            if (urlParams.get('apiUrl')) {
+                CONFIG.API_BASE_URL = urlParams.get('apiUrl');
+            }
+
+            // Allow overriding quiz files location
+            if (urlParams.get('quizUrl')) {
+                CONFIG.QUIZ_FILES_URL = urlParams.get('quizUrl');
+            }
+
+            if (urlParams.get('testQuiz')) {
+                CONFIG.FORCED_QUIZ = urlParams.get('quiz');
+            }
+
+            // Enhanced dev logging
+            console.log('Configuration:', {
+                API_BASE_URL: CONFIG.API_BASE_URL,
+                QUIZ_FILES_URL: CONFIG.QUIZ_FILES_URL,
+                FORCED_QUIZ: CONFIG.FORCED_QUIZ,
+                sessionKey: urlParams.get('sessionKey'),
+                username: urlParams.get('username')
+            });
+        }
+
+        // Update our API_ENDPOINTS to use the configured base URL
+        const API_ENDPOINTS = {
+            checkCompletion: `${CONFIG.API_BASE_URL}/api/check-completion`,
+            postScore: `${CONFIG.API_BASE_URL}/api/post-score`,
+            getLeaderboard: `${CONFIG.API_BASE_URL}/api/leaderboard`,
+            socialPost: `${CONFIG.API_BASE_URL}/api/social-post`
+        };
 
         const questions = [
             {
@@ -936,114 +950,205 @@ const API_ENDPOINTS = {
 
 
         function initializeGame() {
-    try {
-        // Extract URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        gameState.sessionKey = urlParams.get('sessionKey');
-        gameState.username = urlParams.get('username');
+            try {
+                // Extract URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                gameState.sessionKey = urlParams.get('sessionKey');
+                gameState.username = urlParams.get('username');
 
-        if (!gameState.sessionKey || !gameState.username) {
-            showError("Invalid session. Please log in again.");
-            return;
+                if (!gameState.sessionKey || !gameState.username) {
+                    showError("Invalid session. Please log in again.");
+                    return;
+                }
+
+                // Hide quiz screen and end screen initially
+                document.getElementById('quiz-screen').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'none';
+
+                // Start initialization checks
+                checkGameAvailability();
+
+            } catch (error) {
+                showError("Failed to initialize game: " + error.message);
+            }
         }
 
-        // Hide quiz screen and end screen initially
-        document.getElementById('quiz-screen').style.display = 'none';
-        document.getElementById('end-screen').style.display = 'none';
+        async function checkGameAvailability() {
+            try {
+                // Check if user has already completed today's quiz
+                if (await hasCompletedTodaysQuiz()) {
+                    showError("You have already completed today's quiz!");
+                    return;
+                }
 
-        // Start initialization checks
-        checkGameAvailability();
+                // Get today's quiz
+                const quiz = await getTodaysQuiz();
+                if (!quiz) {
+                    showError("No quiz available today. Please come back tomorrow!");
+                    return;
+                }
 
-    } catch (error) {
-        showError("Failed to initialize game: " + error.message);
-    }
-}
+                gameState.currentQuiz = quiz;
 
-async function checkGameAvailability() {
-    try {
-        // Check if user has already completed today's quiz
-        if (await hasCompletedTodaysQuiz()) {
-            showError("You have already completed today's quiz!");
-            return;
+                // Check quiz timing
+                await checkQuizTiming();
+
+            } catch (error) {
+                showError("Failed to check game availability: " + error.message);
+            }
         }
 
-        // Get today's quiz
-        const quiz = await getTodaysQuiz();
-        if (!quiz) {
-            showError("No quiz available today. Please come back tomorrow!");
-            return;
+
+        function startGame() {
+            // Show welcome screen with intro text
+            document.getElementById('welcome-screen').style.display = 'block';
+            typewriterIntro(gameState.currentQuiz.introText);
         }
 
-        gameState.currentQuiz = quiz;
+        // Called when user clicks START GAME button
+        function startQuiz() {
+            // Hide welcome screen
+            document.getElementById('welcome-screen').style.display = 'none';
 
-        // Check quiz timing
-        await checkQuizTiming();
+            // Show quiz screen
+            document.getElementById('quiz-screen').style.display = 'block';
 
-    } catch (error) {
-        showError("Failed to check game availability: " + error.message);
-    }
-}
+            // Reset game state
+            currentQuestion = 0;
+            score = 0;
 
-
-function startGame() {
-    // Show welcome screen with intro text
-    document.getElementById('welcome-screen').style.display = 'block';
-    typewriterIntro(gameState.currentQuiz.introText);
-}
-
-// Called when user clicks START GAME button
-function startQuiz() {
-    // Hide welcome screen
-    document.getElementById('welcome-screen').style.display = 'none';
-    
-    // Show quiz screen
-    document.getElementById('quiz-screen').style.display = 'block';
-    
-    // Reset game state
-    currentQuestion = 0;
-    score = 0;
-    
-    // Start first question
-    showQuestion();
-}
+            // Start first question
+            showQuestion();
+        }
 
 
-
-        // Mock backend calls
         async function hasCompletedTodaysQuiz() {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500));
-            // Mock response - normally would check with backend
-            return false;
+            try {
+                const params = new URLSearchParams({
+                    sessionKey: gameState.sessionKey
+                });
+                
+                // Add force parameter in forced quiz mode
+                if (CONFIG.FORCED_QUIZ) {
+                    params.append('force', 'true');
+                }
+
+                const response = await fetch(`${API_ENDPOINTS.checkCompletion}?${params}`);
+                if (!response.ok) {
+                    throw new Error('Failed to check completion status');
+                }
+                const data = await response.json();
+                return data.completed;
+            } catch (error) {
+                console.error("Failed to check quiz completion:", error);
+                return false;
+            }
         }
+
 
         async function getTodaysQuiz() {
-            // Get UTC date for quiz file
-            const today = new Date();
-            const dateString = today.toISOString().split('T')[0];
-
             try {
-                // Simulate fetching quiz file
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Mock quiz data
-                return {
-                    id: "quiz_" + dateString,
-                    startTime: new Date(today.setHours(today.getHours() - 1)).toISOString(), // Starts in 1 hour
-                    endTime: new Date(today.setHours(today.getHours() + 24)).toISOString(),
-                    introText: "WELCOME TO TODAY'S RETRO GAMING CHALLENGE!\n\n TEST YOUR KNOWLEDGE OF CLASSIC GAMES...",
-                    questions: [/* ... existing questions ... */]
-                };
+                let quizUrl;
+                
+                if (CONFIG.FORCED_QUIZ) {
+                    // Use specified quiz file
+                    quizUrl = `${CONFIG.QUIZ_FILES_URL}/${CONFIG.FORCED_QUIZ}.json`;
+                    console.log('Dev mode: Loading forced quiz:', quizUrl);
+                } else {
+                    // Use today's date based on UTC
+                    const today = new Date();
+                    const dateString = today.toISOString().split('T')[0];
+                    quizUrl = `${CONFIG.QUIZ_FILES_URL}/${dateString}.json`;
+                }
+                
+                const response = await fetch(quizUrl);
+                
+                // Handle HTTP errors
+                if (response.status === 404) {
+                    console.error('No quiz found:', quizUrl);
+                    return null;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const quiz = await response.json();
+                
+                // Validate quiz structure
+                if (!quiz.id || !quiz.startTime || !quiz.endTime || !quiz.questions || !Array.isArray(quiz.questions)) {
+                    console.error('Invalid quiz format:', quiz);
+                    throw new Error('Invalid quiz format');
+                }
+                
+                return quiz;
             } catch (error) {
                 console.error("Failed to fetch quiz:", error);
+                if (error.message.includes('Failed to fetch')) {
+                    showError("Unable to connect to quiz server. Please check your internet connection.");
+                } else {
+                    showError("Error loading quiz. Please try again later.");
+                }
                 return null;
             }
         }
+
+        // Update the dev banner to show forced quiz info
+        function addDevBanner() {
+            if (CONFIG.API_BASE_URL !== 'https://api.retroquiz.com' || CONFIG.FORCED_QUIZ) {
+                const banner = document.createElement('div');
+                banner.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #ff0000;
+                    color: white;
+                    text-align: center;
+                    padding: 5px;
+                    font-size: 12px;
+                    z-index: 1000;
+                `;
+                
+                let bannerText = [];
+                if (CONFIG.API_BASE_URL !== 'https://api.retroquiz.com') {
+                    bannerText.push(`API: ${CONFIG.API_BASE_URL}`);
+                }
+                if (CONFIG.FORCED_QUIZ) {
+                    bannerText.push(`QUIZ: ${CONFIG.FORCED_QUIZ}`);
+                }
+                
+                banner.textContent = `DEV MODE - ${bannerText.join(' | ')}`;
+                document.body.appendChild(banner);
+            }
+        }
+
+        function logDevInfo() {
+    if (CONFIG.FORCED_QUIZ) {
+        console.log('DEV MODE enabled:', {
+            quiz: CONFIG.FORCED_QUIZ,
+            timeChecks: 'disabled',
+            completionCheck: 'force=true',
+            scorePosting: 'force=true',
+            quizStart: gameState.currentQuiz.startTime,
+            quizEnd: gameState.currentQuiz.endTime,
+            currentTime: new Date().toISOString()
+        });
+    }
+}
 
         async function checkQuizTiming() {
             const now = new Date();
             const startTime = new Date(gameState.currentQuiz.startTime);
             const endTime = new Date(gameState.currentQuiz.endTime);
+
+
+            // Skip time checks if using forced quiz
+            if (CONFIG.FORCED_QUIZ) {
+                logDevInfo();
+                startGame();
+                return;
+            }
 
             if (now < startTime) {
                 // Quiz hasn't started yet - show countdown
@@ -1445,62 +1550,127 @@ function startQuiz() {
         const CURRENT_USER = "8BIT_WARRIOR_ELITE"; // Hardcoded current user for demo
 
 
+
         async function updateLeaderboard(newScore) {
             const leaderboardDiv = document.getElementById('leaderboard-list');
             leaderboardDiv.innerHTML = '<div class="loading">UPDATING LEADERBOARD</div>';
 
             try {
-                // Post score to backend
-                await postScore(newScore);
+                // First post the score
+                if (newScore) {
+                    const params = new URLSearchParams({
+                        sessionKey: gameState.sessionKey,
+                        quizId: gameState.currentQuiz.id,
+                    });
+                    
+                    if (CONFIG.FORCED_QUIZ) {
+                        params.append('force', 'true');
+                    }
 
-                // Fetch updated leaderboard
-                const response = await fetchLeaderboard();
+                    const scoreResponse = await fetch(`${API_ENDPOINTS.postScore}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            score: newScore,
+                            answers: gameState.answers || []
+                        })
+                    });
+
+                    if (!scoreResponse.ok) {
+                        throw new Error(`Failed to post score: ${scoreResponse.status}`);
+                    }
+                }
+
+                // Then fetch the updated leaderboard
+                const params = new URLSearchParams({
+                    sessionKey: gameState.sessionKey,
+                    quizId: gameState.currentQuiz.id
+                });
+
+                const response = await fetch(`${API_ENDPOINTS.getLeaderboard}?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch leaderboard: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Validate leaderboard data
+                if (!data.leaderboard || !Array.isArray(data.leaderboard)) {
+                    throw new Error('Invalid leaderboard format');
+                }
 
                 // Clear loading message
                 leaderboardDiv.innerHTML = '';
 
                 // Create entries in reverse order (5th to 1st)
-                const sortedLeaderboard = response.leaderboard;
-
-                for (let i = sortedLeaderboard.length - 1; i >= 0; i--) {
-                    const entry = sortedLeaderboard[i];
-                    const position = sortedLeaderboard.length - i;
-
+                const entries = data.leaderboard.slice(0, 5); // Only top 5
+                
+                for (let i = entries.length - 1; i >= 0; i--) {
+                    const entry = entries[i];
+                    const position = entries.length - i;
+                    
                     const entryDiv = document.createElement('div');
                     entryDiv.className = 'leaderboard-entry';
-                    entryDiv.style.setProperty('--entry-index', sortedLeaderboard.length - index);
-
+                    entryDiv.style.setProperty('--entry-index', entries.length - i);
+                    
                     // Truncate username if too long
-                    const displayName = entry.username.length > 15
-                        ? entry.username.substring(0, 12) + '...'
+                    const displayName = entry.username.length > 15 
+                        ? entry.username.substring(0, 12) + '...' 
                         : entry.username;
 
                     entryDiv.innerHTML = `
-                <span class="rank">#${index + 1}</span>
-                <a href="${entry.social}" target="_blank" class="player-name">${displayName}</a>
-                <span class="player-score">${entry.score}</span>
-            `;
-
+                        <span class="rank">#${i + 1}</span>
+                        ${entry.social 
+                            ? `<a href="${entry.social}" target="_blank" class="player-name">${displayName}</a>`
+                            : `<span class="player-name">${displayName}</span>`
+                        }
+                        <span class="player-score">${entry.score}</span>
+                    `;
+                    
                     // Add first place effects if it's the current user
-                    if (index === 0 && entry.username === gameState.username) {
+                    if (i === 0 && entry.isCurrentUser) {
                         entryDiv.classList.add('first-place');
                     }
-
+                    
                     leaderboardDiv.appendChild(entryDiv);
-                    setTimeout(() => entryDiv.classList.add('show'), 100)
-                };
+                    setTimeout(() => entryDiv.classList.add('show'), 100);
+                }
 
-                // Update player rank with suffix
+                // Update player rank display
                 const rankValue = document.getElementById('rank-value');
                 const rankSuffix = document.querySelector('.rank-suffix');
-                rankValue.textContent = response.playerRank;
-                rankSuffix.textContent = getOrdinalSuffix(response.playerRank);
+                if (rankValue && rankSuffix) {
+                    rankValue.textContent = data.playerRank;
+                    rankSuffix.textContent = getOrdinalSuffix(data.playerRank);
+                }
+
+                // Log leaderboard info in dev mode
+                if (CONFIG.FORCED_QUIZ) {
+                    console.log('Leaderboard updated:', {
+                        totalPlayers: data.totalPlayers,
+                        playerRank: data.playerRank,
+                        topScores: data.leaderboard.map(e => ({
+                            username: e.username,
+                            score: e.score,
+                            isCurrentUser: e.isCurrentUser
+                        }))
+                    });
+                }
 
             } catch (error) {
-                leaderboardDiv.innerHTML = '<div style="color: #ff0000; text-align: center;">ERROR UPDATING LEADERBOARD</div>';
+                console.error("Leaderboard error:", error);
+                leaderboardDiv.innerHTML = `
+                    <div style="color: #ff0000; text-align: center;">
+                        ERROR UPDATING LEADERBOARD<br>
+                        <button onclick="updateLeaderboard(${newScore})" class="submit-button" style="margin-top: 10px;">
+                            RETRY
+                        </button>
+                    </div>`;
             }
         }
-
 
         function getOrdinalSuffix(number) {
             const j = number % 10;
@@ -1679,41 +1849,37 @@ function startQuiz() {
             typeNextChar();
         }
 
-
         async function postScore(score) {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Mock API call
-            return fetch(API_ENDPOINTS.postScore, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
+            try {
+                const scoreData = {
                     sessionKey: gameState.sessionKey,
                     quizId: gameState.currentQuiz.id,
-                    score: score
-                })
-            });
-        }
+                    score: score,
+                    answers: gameState.answers // assuming we're tracking answers
+                };
 
-        async function fetchLeaderboard() {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500));
+                // Add force parameter in forced quiz mode
+                if (CONFIG.FORCED_QUIZ) {
+                    scoreData.force = true;
+                }
 
-            // Mock leaderboard data
-            return leaderboardData = {
-                leaderboard: [
-                    { username: "PIXELMASTER_9000", score: 8200, social: "https://twitter.com/pixelmaster" },
-                    { username: "NINTENDOKNIGHT", score: 7500, social: "https://twitter.com/nintendoknight" },
-                    { username: "RETROGAMER_SUPREME_2024", score: 6800, social: "https://twitter.com/retrogamer" },
-                    { username: "ARCADE_CHAMPION_XX", score: 6500, social: "https://twitter.com/arcade" },
-                    { username: "8BIT_WARRIOR_ELITE", score: 6200, social: "https://twitter.com/8bit" }
-                ],
-                playerRank: 42, // Example rank from server
-                totalPlayers: 1337 // Optional: total number of players
-            };
+                const response = await fetch(API_ENDPOINTS.postScore, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(scoreData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to post score');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error("Failed to post score:", error);
+                throw error;
+            }
         }
 
         function showError(message) {
@@ -1723,9 +1889,6 @@ function startQuiz() {
             document.body.innerHTML = ''; // Clear existing content
             document.body.appendChild(errorDiv);
         }
-
-
-
 
         document.addEventListener('DOMContentLoaded', initializeGame);
 
