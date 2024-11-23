@@ -144,16 +144,9 @@ def api_login_required(view):
     """Modified login_required decorator for API endpoints"""
     @functools.wraps(view)
     def wrapped_view(**kwargs):
-        session_key = request.args.get('sessionKey') or (request.json or {}).get('sessionKey')
-        if session_key:
-            # Set the session based on the sessionKey parameter
-            session['user_did'] = session_key
-            
         if g.user is None:
             return jsonify({"error": {"code": "INVALID_SESSION", "message": "Invalid session key"}}), 401
-
         return view(**kwargs)
-
     return wrapped_view
 
 # Actual web routes start here!
