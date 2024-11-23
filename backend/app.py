@@ -13,6 +13,7 @@ from flask import (
     g,
     session,
     abort,
+    Response,
 )
 from authlib.jose import JsonWebKey
 
@@ -110,6 +111,36 @@ def login_required(view):
 
     return wrapped_view
 
+# Disable all CORS
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def options_handler(path):
+    return Response('', 200)
+
+# API endpoints using the new decorator
+
+def api_login_required(view):
+    """Modified login_required decorator for API endpoints"""
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        session_key = request.args.get('sessionKey') or (request.json or {}).get('sessionKey')
+        if session_key:
+            # Set the session based on the sessionKey parameter
+            session['user_did'] = session_key
+            
+        if g.user is None:
+            return jsonify({"error": {"code": "INVALID_SESSION", "message": "Invalid session key"}}), 401
+
+        return view(**kwargs)
+
+    return wrapped_view
 
 # Actual web routes start here!
 @app.route("/")
@@ -321,8 +352,9 @@ def oauth_callback():
     session["user_did"] = did
     # Note that the handle might change over time, and should be re-resolved periodically in a real app
     session["user_handle"] = handle
-
-    return redirect("/bsky/post")
+    quiz_url = app.config.get("QUIZ_FRONTEND_URL", "http://localhost:3000")
+    api_url = request.url_root
+    return redirect(f"{quiz_url}?apiUrl={api_url}&sessionKey={did}")
 
 
 # Example endpoint demonstrating manual refreshing of auth token.
@@ -360,6 +392,7 @@ def oauth_logout():
 
 
 # Example form endpoint demonstrating making an authenticated request to the logged-in user's PDS to create a repository record.
+# delete me 
 @login_required
 @app.route("/bsky/post", methods=("GET", "POST"))
 def bsky_post():
@@ -387,6 +420,185 @@ def bsky_post():
     flash("Post record created in PDS!")
     return render_template("bsky_post.html")
 
+# API endpoints using the new decorator
+@app.route("/api/check-completion")
+@api_login_required
+def check_completion():
+    # Get today's quiz completion status
+    today = datetime.now().strftime("%Y-%m-%d")
+    quiz_id = f"quiz_{today}"
+    
+    completion = query_db(
+        "SELECT completed_at FROM quiz_scores WHERE did = ? AND quiz_id = ?",
+        [g.user['did'], quiz_id],
+        one=True
+    )
+    
+    return jsonify({
+        "completed": completion is not None,
+        "completedAt": completion["completed_at"] if completion else None
+    })
+
+@app.route("/api/scores", methods=["POST"])
+@api_login_required
+def submit_score():
+    data = request.json
+    quiz_id = data.get('quizId')
+    quiz_url = data.get('quizUrl')
+
+    # Check if already submitted
+    existing = query_db(
+        "SELECT id FROM quiz_scores WHERE did = ? AND quiz_id = ?",
+        [g.user['did'], quiz_id],
+        one=True
+    )
+    if existing:
+        return jsonify({"error": {"code": "ALREADY_SUBMITTED", "message": "Score already submitted"}}), 409
+
+    # Insert score
+    try:
+        query_db(
+            "INSERT INTO quiz_scores (did, quiz_id, quiz_url, score, answers) VALUES (?, ?, ?, ?)",
+            [g.user['did'], quiz_id, quiz_url, data["score"], json.dumps(data["answers"])]
+        )
+        return jsonify({
+            "success": True,
+            "error": None,
+            "socialPost": {"url": None, "error": None}
+        })
+    except Exception as e:
+        return jsonify({"error": {"code": "SERVER_ERROR", "message": str(e)}}), 500
+
+@app.route("/api/leaderboard")
+@api_login_required
+def get_leaderboard():
+    quiz_id = request.args.get("quizId")
+    
+    # Get leaderboard data
+    scores = query_db("""
+        SELECT s.score, s.did, o.handle as username
+        FROM quiz_scores s
+        JOIN oauth_session o ON s.did = o.did
+        WHERE s.quiz_id = ?
+        ORDER BY s.score DESC, s.completed_at ASC
+    """, [quiz_id])
+    
+    player_rank = 0
+    leaderboard = []
+    total_players = len(scores)
+    
+    for idx, score in enumerate(scores, 1):
+        if score["did"] == g.user['did']:
+            player_rank = idx
+            
+        leaderboard.append({
+            "username": score["username"],
+            "score": score["score"],
+            "social": None,  # Could be implemented to show BlueSky profile
+            "isCurrentUser": score["did"] == g.user['did']
+        })
+    
+    return jsonify({
+        "quizId": quiz_id,
+        "totalPlayers": total_players,
+        "playerRank": player_rank,
+        "leaderboard": leaderboard
+    })
+
+@app.route("/api/social-post", methods=["POST"])
+@api_login_required
+def create_social_post():
+    data = request.json
+    quiz_id = data.get("quizId")
+    
+    # Get user's score
+    score = query_db(
+        "SELECT score FROM quiz_scores WHERE did = ? AND quiz_id = ?",
+        [g.user['did'], quiz_id],
+        one=True
+    )
+    if not score:
+        return jsonify({"error": {"code": "SCORE_NOT_FOUND", "message": "Score not found"}}), 404
+
+    # Create BlueSky post
+    try:
+        pds_url = g.user["pds_url"]
+        req_url = f"{pds_url}/xrpc/com.atproto.repo.createRecord"
+        
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        body = {
+            "repo": g.user["did"],
+            "collection": "app.bsky.feed.post",
+            "record": {
+                "$type": "app.bsky.feed.post",
+                "text": f"I scored {score['score']} points on today's quiz! #QuizBot",
+                "createdAt": now,
+            },
+        }
+        
+        resp = pds_authed_req("POST", req_url, body=body, user=g.user, db=get_db())
+        if resp.status_code not in [200, 201]:
+            return jsonify({"success": False, "error": "Failed to create post"}), 500
+            
+        post_uri = resp.json().get("uri", "")
+        post_url = f"https://bsky.app/profile/{g.user['handle']}/post/{post_uri.split('/')[-1]}"
+        
+        # Save post URL
+        query_db(
+            "INSERT INTO social_posts (did, quiz_id, post_url) VALUES (?, ?, ?)",
+            [g.user['did'], quiz_id, post_url]
+        )
+        
+        return jsonify({
+            "success": True,
+            "postUrl": post_url,
+            "error": None
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/debug/scores")
+def debug_scores():
+    # Get all scores with user handles
+    scores = query_db("""
+        SELECT 
+            s.quiz_id,
+            s.did,
+            s.score,
+            s.completed_at,
+            s.answers,
+            s.social_post_url,
+            o.handle as username
+        FROM quiz_scores s
+        LEFT JOIN oauth_session o ON s.did = o.did
+        ORDER BY s.completed_at DESC
+    """)
+    
+    # Convert rows to dictionaries and parse the JSON answers
+    formatted_scores = []
+    for score in scores:
+        score_dict = dict(score)
+        try:
+            score_dict['answers'] = json.loads(score_dict['answers'])
+        except:
+            score_dict['answers'] = None  # In case JSON parsing fails
+        formatted_scores.append(score_dict)
+    
+    return jsonify({
+        "scores": formatted_scores,
+        "total": len(scores)
+    })
+
+# You might also want to see sessions for debugging
+@app.route("/api/debug/sessions")
+def debug_sessions():
+    sessions = query_db("SELECT did, handle, pds_url FROM oauth_session")
+    return jsonify({
+        "sessions": [dict(session) for session in sessions],
+        "total": len(sessions)
+    })
+
 
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -396,3 +608,7 @@ def internal_server_error(e):
 @app.errorhandler(400)
 def bad_request_error(e):
     return render_template("error.html", status_code=400, err=e), 400
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

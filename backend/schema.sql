@@ -22,3 +22,24 @@ CREATE TABLE IF NOT EXISTS oauth_session (
     dpop_pds_nonce TEXT,
     dpop_private_jwk TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS quiz_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    did TEXT NOT NULL,
+    quiz_id TEXT NOT NULL,
+    quiz_url TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    answers JSON NOT NULL,
+    social_post_url TEXT,
+    UNIQUE(did, quiz_id)
+);
+
+CREATE TABLE IF NOT EXISTS social_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    did TEXT NOT NULL,
+    quiz_id TEXT NOT NULL,
+    post_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(did, quiz_id)
+);
