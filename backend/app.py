@@ -44,6 +44,19 @@ CLIENT_PUB_JWK = json.loads(CLIENT_SECRET_JWK.as_json(is_private=False))
 # Defensively check that the public JWK is really public and didn't somehow end up with secret cryptographic key info
 assert "d" not in CLIENT_PUB_JWK
 
+# Load this configuration from environment variables (which might mean a .env "dotenv" file)
+app.config.from_prefixed_env()
+
+# Proxy fix 
+app.wsgi_app = ProxyFix(
+    app.wsgi_app,
+    x_for=1,
+    x_proto=1,
+    x_host=1,
+    x_prefix=1
+)
+
+
 
 # Helpers for managing database connection.
 # Note that you could use a sqlite ":memory:" database instead. In that case you would want to have a global sqlite connection, instead of re-connecting per connection. This file-based setup is following the Flask docs/tutorial.
