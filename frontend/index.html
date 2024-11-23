@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Quiz Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        body {
+            background-color: #120458;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image:
+                radial-gradient(circle at 10px 10px, #ffffff03 1px, transparent 0),
+                linear-gradient(to right, #2a1f6d 1px, transparent 1px),
+                linear-gradient(to bottom, #2a1f6d 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #000;
+            border: 4px solid #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+        }
+
+        .timer {
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .timer.warning {
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .question-count {
+            font-size: 14px;
+            color: #00ff00;
+        }
+
+        .question {
+            font-size: 18px;
+            margin-bottom: 20px;
+            min-height: 72px;
+            transform: translateY(20px);
+            animation: slideIn 0.5s forwards;
+            padding: 15px;
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 4px;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .sequence-container {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .sequence-item {
+            background-color: #333;
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .sequence-item:active {
+            cursor: grabbing;
+            transform: scale(1.02);
+        }
+
+        .sequence-item.dragging {
+            opacity: 0.5;
+        }
+
+        .option-button {
+            background-color: #333;
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .option-button:hover::before {
+            left: 100%;
+        }
+
+        .option-button:hover {
+            background-color: #444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-answer {
+            width: 100%;
+            background-color: #333;
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .submit-button {
+            width: 100%;
+            background-color: #00ff00;
+            border: none;
+            color: #000;
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2);
+        }
+
+        .submit-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.1),
+                    transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: rotate(45deg) translateY(-100%);
+            }
+
+            100% {
+                transform: rotate(45deg) translateY(100%);
+            }
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+            opacity: 0;
+            position: relative;
+        }
+
+        .correct {
+            color: #00ff00;
+            animation: correctAnswer 0.5s forwards;
+        }
+
+        .incorrect {
+            color: #ff0000;
+            animation: incorrectAnswer 0.5s forwards;
+        }
+
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .container.shake {
+            animation: shake 0.5s cubic-bezier(0.36, 0, 0.66, -0.56) both;
+            border-color: #ff0000;
+        }
+
+        /* Additional animation to flash the container red */
+        @keyframes flashRed {
+
+            0%,
+            100% {
+                background-color: #000;
+            }
+
+            50% {
+                background-color: rgba(255, 0, 0, 0.2);
+            }
+        }
+
+        .container.shake {
+            animation:
+                shake 0.7s cubic-bezier(0.36, 0, 0.66, -0.56),
+                flashRed 0.7s ease-in-out;
+        }
+
+        @keyframes correctAnswer {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes incorrectAnswer {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            20%,
+            60% {
+                transform: scale(1.1) rotate(-3deg);
+            }
+
+            40%,
+            80% {
+                transform: scale(1.1) rotate(3deg);
+            }
+        }
+
+        .score-display {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
+            animation: fall 3s linear forwards;
+            top: -20px;
+            /* Start above the viewport */
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(120vh) rotate(720deg);
+                /* Go beyond viewport height */
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #333;
+            margin-top: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #00ff00;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #welcome-screen h1 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                text-shadow: 0 0 10px #00ff00;
+            }
+
+            50% {
+                text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00;
+            }
+        }
+
+        .leaderboard {
+            background-color: #1a1a1a;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 4px;
+        }
+
+        .leaderboard h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #leaderboard-list div {
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #leaderboard-list div:last-child {
+            border-bottom: none;
+        }
+
+        .submit-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .submit-button:disabled::after {
+            display: none;
+        }
+
+        .input-answer {
+            width: 100%;
+            background-color: #333;
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .input-answer:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        /* Add ripple effect for when input becomes valid */
+        @keyframes validInput {
+            0% {
+                border-color: #fff;
+            }
+
+            50% {
+                border-color: #00ff00;
+            }
+
+            100% {
+                border-color: #fff;
+            }
+        }
+
+        .input-answer.valid {
+            animation: validInput 0.5s ease-out;
+        }
+
+        .option-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .option-button:disabled::before {
+            display: none;
+        }
+
+        .option-button:disabled:hover {
+            background-color: #333;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .leaderboard {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .leaderboard {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            position: relative;
+            overflow: visible;
+            /* Allow first-place glow to extend outside */
+        }
+
+        .leaderboard-entry {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            position: relative;
+            transition: all 0.3s ease;
+            margin: 0;
+            /* Reset margin */
+        }
+
+        .leaderboard-entry:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-entry.first-place {
+            background: linear-gradient(90deg, #000, #222, #000);
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+            padding: 12px 20px;
+            margin: 4px 0;
+            /* Add margin instead of negative margin */
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .player-name {
+            color: #fff;
+            text-decoration: none;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            margin-left: 30px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .player-name:hover {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            text-decoration: none;
+        }
+
+        .player-score {
+            font-family: 'Press Start 2P', cursive;
+            color: #00ff00;
+        }
+
+        .loading {
+            text-align: center;
+            color: #00ff00;
+            font-family: 'Press Start 2P', cursive;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80% {
+                content: '...';
+            }
+
+            100% {
+                content: '';
+            }
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes firstPlace {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            }
+        }
+
+        .rank {
+            position: absolute;
+            left: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .leaderboard-entry.first-place.celebrate {
+            animation: celebrate 1s ease-in-out;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(0, 255, 0, 0);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            }
+        }
+
+
+        .leaderboard-entry {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-entry.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .leaderboard-entry.first-place {
+            background: linear-gradient(90deg, #000, #222, #000);
+            border: 2px solid #00ff00;
+            margin: -2px;
+            padding: 12px 20px;
+        }
+
+        /* Separate animation for first place celebration */
+        .leaderboard-entry.first-place.celebrate {
+            animation: celebrate 1s ease-in-out;
+        }
+
+        #welcome-screen {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .game-logo {
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+            image-rendering: pixelated;
+            animation: floatLogo 3s ease-in-out infinite;
+        }
+
+        @keyframes floatLogo {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+
+        .intro-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            text-align: left;
+            min-height: 160px;
+            /* Estimated height based on text length */
+            width: 100%;
+            white-space: pre-wrap;
+            position: relative;
+        }
+
+        .cursor {
+            position: absolute;
+            background-color: #00ff00;
+            width: 12px;
+            height: 24px;
+            animation: blink 1s step-end infinite;
+            display: inline-block;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .intro-text span {
+            opacity: 0;
+            display: inline-block;
+            animation: fadeIn 0.1s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        /* Make the start button appear after text is done */
+        .start-button {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .start-button.show {
+            animation: showButton 0.5s forwards;
+        }
+
+        @keyframes showButton {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .countdown-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            padding: 10px;
+            border: 4px solid #00ff00;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+        }
+
+        .countdown-timer {
+            font-size: 48px;
+            color: #00ff00;
+            margin-top: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .error-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            padding: 40px;
+            border: 4px solid #ff0000;
+            color: #ff0000;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="welcome-screen">
+            <img src="../logos/quokka-transparent.png" alt="quokka" class="game-logo" />
+            <h1>QUOKKA QUIZ</h1>
+            <div class="intro-text"></div>
+            <button class="submit-button start-button" onclick="startQuiz()">START GAME</button>
+        </div>
+
+
+        <div id="quiz-screen" style="display: none;">
+            <div class="stats-bar">
+                <div class="timer">30</div>
+                <div class="question-count">Question 1/10</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="question"></div>
+            <div class="options"></div>
+            <div class="feedback"></div>
+        </div>
+
+        <div id="end-screen" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 20px;">QUIZ COMPLETE!</h2>
+            <div class="score-display">0</div>
+            <div class="leaderboard">
+                <h3>LEADERBOARD</h3>
+                <div id="leaderboard-list"></div>
+            </div>
+            <div class="end-screen-actions">
+                <div class="player-rank">
+                    YOUR RANK
+                    <div class="rank-number">
+                        <span id="rank-value">0</span>
+                        <span class="rank-suffix"></span>
+                    </div>
+                </div>
+                <button class="end-button post-score" onclick="postScore()">POST SCORE</button>
+                <button class="end-button home" onclick="goHome()">EXIT TO BSKY.APP</button>
+            </div>
+        </div>
+
+    </div>
+    <script>
+
+const gameState = {
+    sessionKey: null,
+    username: null,
+    currentQuiz: null,
+    hasCompletedQuiz: false
+};
+
+// At the top of our game code:
+const CONFIG = {
+    // Default to production URLs
+    API_BASE_URL: 'https://example.com',
+    QUIZ_FILES_URL: 'https://example.com',
+};
+
+// Look for URL parameters that override these
+function initializeConfig() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Allow overriding API base URL
+    if (urlParams.get('apiUrl')) {
+        CONFIG.API_BASE_URL = urlParams.get('apiUrl');
+    }
+    
+    // Allow overriding quiz files location
+    if (urlParams.get('quizUrl')) {
+        CONFIG.QUIZ_FILES_URL = urlParams.get('quizUrl');
+    }
+}
+
+// Update our API_ENDPOINTS to use the configured base URL
+const API_ENDPOINTS = {
+    checkCompletion: `${CONFIG.API_BASE_URL}/api/check-completion`,
+    postScore: `${CONFIG.API_BASE_URL}/api/post-score`,
+    getLeaderboard: `${CONFIG.API_BASE_URL}/api/leaderboard`,
+    socialPost: `${CONFIG.API_BASE_URL}/api/social-post`
+};
+
+        const questions = [
+            {
+                type: "multiple",
+                question: "What was the first commercially successful video game?",
+                correct: "Pong",
+                incorrect: ["Space Invaders", "Pac-Man", "Donkey Kong"]
+            },
+            // {
+            //     type: "numeric",
+            //     question: "In what year was the first Nintendo Entertainment System released?",
+            //     correct: 1985,
+            //     range: 10 // Acceptable range for partial points
+            // },
+            // {
+            //     type: "sequence",
+            //     question: "Put these gaming consoles in order of release, earliest first:",
+            //     correct: ["NES", "SNES", "PlayStation", "Xbox"],
+            //     points: 1000
+            // },
+            // {
+            //     type: "free",
+            //     question: "What company created Mario?",
+            //     correct: "Nintendo"
+            // }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let timer;
+        let timeLeft;
+        let draggingElement = null;
+
+
+
+
+        function initializeGame() {
+    try {
+        // Extract URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        gameState.sessionKey = urlParams.get('sessionKey');
+        gameState.username = urlParams.get('username');
+
+        if (!gameState.sessionKey || !gameState.username) {
+            showError("Invalid session. Please log in again.");
+            return;
+        }
+
+        // Hide quiz screen and end screen initially
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'none';
+
+        // Start initialization checks
+        checkGameAvailability();
+
+    } catch (error) {
+        showError("Failed to initialize game: " + error.message);
+    }
+}
+
+async function checkGameAvailability() {
+    try {
+        // Check if user has already completed today's quiz
+        if (await hasCompletedTodaysQuiz()) {
+            showError("You have already completed today's quiz!");
+            return;
+        }
+
+        // Get today's quiz
+        const quiz = await getTodaysQuiz();
+        if (!quiz) {
+            showError("No quiz available today. Please come back tomorrow!");
+            return;
+        }
+
+        gameState.currentQuiz = quiz;
+
+        // Check quiz timing
+        await checkQuizTiming();
+
+    } catch (error) {
+        showError("Failed to check game availability: " + error.message);
+    }
+}
+
+
+function startGame() {
+    // Show welcome screen with intro text
+    document.getElementById('welcome-screen').style.display = 'block';
+    typewriterIntro(gameState.currentQuiz.introText);
+}
+
+// Called when user clicks START GAME button
+function startQuiz() {
+    // Hide welcome screen
+    document.getElementById('welcome-screen').style.display = 'none';
+    
+    // Show quiz screen
+    document.getElementById('quiz-screen').style.display = 'block';
+    
+    // Reset game state
+    currentQuestion = 0;
+    score = 0;
+    
+    // Start first question
+    showQuestion();
+}
+
+
+
+        // Mock backend calls
+        async function hasCompletedTodaysQuiz() {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // Mock response - normally would check with backend
+            return false;
+        }
+
+        async function getTodaysQuiz() {
+            // Get UTC date for quiz file
+            const today = new Date();
+            const dateString = today.toISOString().split('T')[0];
+
+            try {
+                // Simulate fetching quiz file
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Mock quiz data
+                return {
+                    id: "quiz_" + dateString,
+                    startTime: new Date(today.setHours(today.getHours() - 1)).toISOString(), // Starts in 1 hour
+                    endTime: new Date(today.setHours(today.getHours() + 24)).toISOString(),
+                    introText: "WELCOME TO TODAY'S RETRO GAMING CHALLENGE!\n\n TEST YOUR KNOWLEDGE OF CLASSIC GAMES...",
+                    questions: [/* ... existing questions ... */]
+                };
+            } catch (error) {
+                console.error("Failed to fetch quiz:", error);
+                return null;
+            }
+        }
+
+        async function checkQuizTiming() {
+            const now = new Date();
+            const startTime = new Date(gameState.currentQuiz.startTime);
+            const endTime = new Date(gameState.currentQuiz.endTime);
+
+            if (now < startTime) {
+                // Quiz hasn't started yet - show countdown
+                showCountdown(startTime);
+                return;
+            }
+
+            if (now > endTime) {
+                showError("Today's quiz has ended. Please come back tomorrow!");
+                return;
+            }
+
+            // Quiz is active - start the game
+            startGame();
+        }
+
+        function showCountdown(startTime) {
+            const countdownDiv = document.createElement('div');
+            countdownDiv.className = 'countdown-container';
+            countdownDiv.innerHTML = `
+        <h2>Today's Quiz Starts In:</h2>
+        <div class="countdown-timer">00:00:00</div>
+    `;
+            document.body.appendChild(countdownDiv);
+
+            const updateCountdown = () => {
+                const now = new Date();
+                const diff = startTime - now;
+
+                if (diff <= 0) {
+                    // Quiz is ready - start the game
+                    countdownDiv.remove();
+                    startGame();
+                    return;
+                }
+
+                // Update countdown display
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+
+                countdownDiv.querySelector('.countdown-timer').textContent =
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                setTimeout(updateCountdown, 1000);
+            };
+
+            updateCountdown();
+        }
+
+        function startGame() {
+            // Initialize game with quiz data
+            document.getElementById('welcome-screen').style.display = 'block';
+            typewriterIntro(gameState.currentQuiz.introText);
+        }
+
+
+
+
+
+
+
+        function showQuestion() {
+            const question = questions[currentQuestion];
+            document.querySelector('.question-count').textContent = `Question ${currentQuestion + 1}/${questions.length}`;
+            updateProgressBar();
+
+            const questionElement = document.querySelector('.question');
+            questionElement.textContent = '';
+            typeWriter(question.question, questionElement);
+
+            const optionsContainer = document.querySelector('.options');
+            optionsContainer.innerHTML = '';
+
+            switch (question.type) {
+                case 'multiple':
+                    setupMultipleChoice(question, optionsContainer);
+                    break;
+                case 'numeric':
+                    setupNumericInput(optionsContainer);
+                    break;
+                case 'sequence':
+                    setupSequenceQuestion(question, optionsContainer);
+                    break;
+                default:
+                    setupFreeInput(optionsContainer);
+            }
+
+            startTimer();
+        }
+
+        function setupMultipleChoice(question, container) {
+            const answers = [question.correct, ...question.incorrect];
+            shuffleArray(answers);
+            answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = answer;
+                button.disabled = true; // Start disabled
+                button.onclick = () => checkAnswer(answer);
+                container.appendChild(button);
+            });
+        }
+
+        function setupNumericInput(container) {
+            const input = document.createElement('input');
+            input.className = 'input-answer';
+            input.type = 'number';
+            input.placeholder = 'Enter a number...';
+
+            const submitButton = document.createElement('button');
+            submitButton.className = 'submit-button';
+            submitButton.textContent = 'Submit';
+            submitButton.disabled = true;
+
+            input.addEventListener('input', () => {
+                const value = input.value.trim();
+                submitButton.disabled = value === '' || isNaN(value);
+                if (!submitButton.disabled) {
+                    input.classList.add('valid');
+                    setTimeout(() => input.classList.remove('valid'), 500);
+                }
+            });
+
+            submitButton.onclick = () => {
+                const value = parseInt(input.value);
+                if (!isNaN(value)) {
+                    checkAnswer(value);
+                }
+            };
+
+            container.appendChild(input);
+            container.appendChild(submitButton);
+        }
+
+        function setupFreeInput(container) {
+            const input = document.createElement('input');
+            input.className = 'input-answer';
+            input.type = 'text';
+            input.placeholder = 'Type your answer...';
+
+            const submitButton = document.createElement('button');
+            submitButton.className = 'submit-button';
+            submitButton.textContent = 'Submit';
+            submitButton.disabled = true;
+
+            input.addEventListener('input', () => {
+                const value = input.value.trim();
+                submitButton.disabled = value.length === 0;
+                if (!submitButton.disabled && value.length === 1) {
+                    input.classList.add('valid');
+                    setTimeout(() => input.classList.remove('valid'), 500);
+                }
+            });
+
+            submitButton.onclick = () => checkAnswer(input.value);
+
+            container.appendChild(input);
+            container.appendChild(submitButton);
+        }
+
+        function setupSequenceQuestion(question, container) {
+            const sequenceContainer = document.createElement('div');
+            sequenceContainer.className = 'sequence-container';
+
+            const items = [...question.correct];
+            shuffleArray(items);
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'sequence-item';
+                div.textContent = item;
+                div.draggable = true;
+                div.addEventListener('dragstart', dragStart);
+                div.addEventListener('dragend', dragEnd);
+                div.addEventListener('dragover', dragOver);
+                div.addEventListener('drop', drop);
+                sequenceContainer.appendChild(div);
+            });
+
+            container.appendChild(sequenceContainer);
+
+            const submitButton = document.createElement('button');
+            submitButton.className = 'submit-button';
+            submitButton.textContent = 'Submit Order';
+            submitButton.disabled = false; // For sequence, button is always enabled since there's always an order
+            submitButton.onclick = () => {
+                const currentOrder = Array.from(sequenceContainer.children).map(item => item.textContent);
+                checkAnswer(currentOrder);
+            };
+            container.appendChild(submitButton);
+        }
+
+        function dragStart(e) {
+            draggingElement = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        function dragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggingElement = null;
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            if (!draggingElement || e.target === draggingElement) return;
+
+            const container = e.target.parentNode;
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElement) {
+                container.insertBefore(draggingElement, afterElement);
+            } else {
+                container.appendChild(draggingElement);
+            }
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.sequence-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function drop(e) {
+            e.preventDefault();
+        }
+
+
+        function typeWriter(text, element, index = 0) {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                setTimeout(() => typeWriter(text, element, index + 1), 50);
+            } else {
+                // Enable all buttons once the question is fully typed
+                // Multiple choice buttons
+                document.querySelectorAll('.option-button').forEach(button => {
+                    button.disabled = false;
+                });
+
+                // Submit buttons for other question types
+                document.querySelectorAll('.submit-button').forEach(button => {
+                    if (!button.parentElement.querySelector('.input-answer') ||
+                        button.parentElement.querySelector('.input-answer').value.trim().length > 0) {
+                        button.disabled = false;
+                    }
+                });
+            }
+        }
+
+
+        function startTimer() {
+            timeLeft = 30;
+            updateTimer();
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer('');
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const timerElement = document.querySelector('.timer');
+            timerElement.textContent = timeLeft;
+            timerElement.className = 'timer' + (timeLeft <= 10 ? ' warning' : '');
+        }
+
+        function updateProgressBar() {
+            const progress = (currentQuestion / questions.length) * 100;
+            document.querySelector('.progress-fill').style.width = `${progress}%`;
+        }
+
+        function checkAnswer(answer) {
+            clearInterval(timer);
+            const question = questions[currentQuestion];
+            let isCorrect = false;
+            let points = 0;
+
+            switch (question.type) {
+                case 'numeric':
+                    const numericAnswer = parseInt(answer);
+                    const difference = Math.abs(numericAnswer - question.correct);
+                    const maxDifference = question.range || 10;
+                    if (difference === 0) {
+                        isCorrect = true;
+                        points = 1000;
+                    } else if (difference <= maxDifference) {
+                        points = Math.floor(1000 * (1 - difference / maxDifference));
+                    }
+                    break;
+                case 'sequence':
+                    const correctOrder = question.correct;
+                    isCorrect = JSON.stringify(answer) === JSON.stringify(correctOrder);
+                    if (isCorrect) points = 1000;
+                    break;
+                default:
+                    isCorrect = answer.toLowerCase() === question.correct.toLowerCase();
+                    if (isCorrect) points = 1000;
+            }
+
+            score += points;
+            showFeedback(isCorrect, question.correct, points);
+        }
+
+        function showFeedback(isCorrect, correctAnswer, points) {
+            const feedback = document.querySelector('.feedback');
+            const container = document.querySelector('.container');
+
+            if (isCorrect) {
+                feedback.textContent = `CORRECT! +${points} points`;
+                feedback.className = 'feedback correct';
+                createConfetti();
+            } else {
+                feedback.textContent = `WRONG! The answer was: ${correctAnswer}`;
+                feedback.className = 'feedback incorrect';
+
+                // Remove any existing shake animation
+                container.classList.remove('shake');
+
+                // Trigger DOM reflow to ensure animation plays again
+                void container.offsetWidth;
+
+                // Add shake class
+                container.classList.add('shake');
+
+                // Remove shake class after animation completes
+                setTimeout(() => {
+                    container.classList.remove('shake');
+                }, 500);
+
+            }
+
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    showQuestion();
+                } else {
+                    showEndScreen();
+                }
+            }, 2000);
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+
+                // Random horizontal position across the whole screen
+                confetti.style.left = `${Math.random() * 100}vw`;
+
+                // Random colors
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+
+                // Random animation duration for more natural effect
+                confetti.style.animationDuration = `${Math.random() * 2 + 2}s`;
+
+                // Random delay for spread out effect
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+
+                // Random rotation for more chaotic movement
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                document.body.appendChild(confetti);
+
+                // Remove confetti element after animation
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-screen').style.display = 'none';
+            document.getElementById('end-screen').style.display = 'block';
+
+            const scoreDisplay = document.querySelector('.score-display');
+            let displayScore = 0;
+            const interval = setInterval(() => {
+                displayScore += Math.ceil(score / 50);
+                if (displayScore >= score) {
+                    displayScore = score;
+                    clearInterval(interval);
+                }
+                scoreDisplay.textContent = displayScore;
+            }, 50);
+
+            updateLeaderboard(score);
+        }
+
+
+        const CURRENT_USER = "8BIT_WARRIOR_ELITE"; // Hardcoded current user for demo
+
+
+        async function updateLeaderboard(newScore) {
+            const leaderboardDiv = document.getElementById('leaderboard-list');
+            leaderboardDiv.innerHTML = '<div class="loading">UPDATING LEADERBOARD</div>';
+
+            try {
+                // Post score to backend
+                await postScore(newScore);
+
+                // Fetch updated leaderboard
+                const response = await fetchLeaderboard();
+
+                // Clear loading message
+                leaderboardDiv.innerHTML = '';
+
+                // Create entries in reverse order (5th to 1st)
+                const sortedLeaderboard = response.leaderboard;
+
+                for (let i = sortedLeaderboard.length - 1; i >= 0; i--) {
+                    const entry = sortedLeaderboard[i];
+                    const position = sortedLeaderboard.length - i;
+
+                    const entryDiv = document.createElement('div');
+                    entryDiv.className = 'leaderboard-entry';
+                    entryDiv.style.setProperty('--entry-index', sortedLeaderboard.length - index);
+
+                    // Truncate username if too long
+                    const displayName = entry.username.length > 15
+                        ? entry.username.substring(0, 12) + '...'
+                        : entry.username;
+
+                    entryDiv.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <a href="${entry.social}" target="_blank" class="player-name">${displayName}</a>
+                <span class="player-score">${entry.score}</span>
+            `;
+
+                    // Add first place effects if it's the current user
+                    if (index === 0 && entry.username === gameState.username) {
+                        entryDiv.classList.add('first-place');
+                    }
+
+                    leaderboardDiv.appendChild(entryDiv);
+                    setTimeout(() => entryDiv.classList.add('show'), 100)
+                };
+
+                // Update player rank with suffix
+                const rankValue = document.getElementById('rank-value');
+                const rankSuffix = document.querySelector('.rank-suffix');
+                rankValue.textContent = response.playerRank;
+                rankSuffix.textContent = getOrdinalSuffix(response.playerRank);
+
+            } catch (error) {
+                leaderboardDiv.innerHTML = '<div style="color: #ff0000; text-align: center;">ERROR UPDATING LEADERBOARD</div>';
+            }
+        }
+
+
+        function getOrdinalSuffix(number) {
+            const j = number % 10;
+            const k = number % 100;
+            if (j == 1 && k != 11) return "ST";
+            if (j == 2 && k != 12) return "ND";
+            if (j == 3 && k != 13) return "RD";
+            return "TH";
+        }
+
+        async function postScore() {
+            const button = document.querySelector('.post-score');
+            button.disabled = true;
+            button.textContent = 'POSTING...';
+
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                button.textContent = 'SCORE POSTED!';
+                button.style.backgroundColor = '#00ff00';
+                button.style.color = '#000';
+            } catch (error) {
+                button.textContent = 'ERROR - TRY AGAIN';
+                button.disabled = false;
+            }
+        }
+
+        function goHome() {
+            // Reset game state
+            currentQuestion = 0;
+            score = 0;
+
+            // Hide end screen and show welcome screen
+            document.getElementById('end-screen').style.display = 'none';
+            document.getElementById('welcome-screen').style.display = 'block';
+
+            // Reset any necessary game elements
+            document.querySelector('.score-display').textContent = '0';
+            document.querySelector('.post-score').textContent = 'POST SCORE';
+            document.querySelector('.post-score').disabled = false;
+            document.querySelector('.post-score').style.backgroundColor = '';
+            document.querySelector('.post-score').style.color = '';
+        }
+
+
+
+        function createFirstPlaceParticles() {
+            // Create celebratory particles around the first place entry
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+        `;
+
+                const angle = (i / 20) * Math.PI * 2;
+                const velocity = 2 + Math.random() * 2;
+                const startX = 50 + Math.cos(angle) * 50;
+                const startY = 50 + Math.sin(angle) * 50;
+
+                particle.style.left = `${startX}%`;
+                particle.style.top = `${startY}%`;
+
+                document.querySelector('.first-place').appendChild(particle);
+
+                // Animate the particle
+                particle.animate([
+                    {
+                        transform: 'scale(1) translate(0, 0)',
+                        opacity: 1
+                    },
+                    {
+                        transform: `scale(0) translate(${Math.cos(angle) * 100}px, ${Math.sin(angle) * 100}px)`,
+                        opacity: 0
+                    }
+                ], {
+                    duration: 1000 + Math.random() * 500,
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    fill: 'forwards'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+
+
+
+        function typewriterIntro(text) {
+            const introDiv = document.querySelector('.intro-text');
+            const startButton = document.querySelector('.start-button');
+            let currentLineDiv = document.createElement('div');
+            currentLineDiv.className = 'intro-line';
+            introDiv.appendChild(currentLineDiv);
+
+            // Create cursor
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            currentLineDiv.appendChild(cursor);
+
+            let charIndex = 0;
+            let currentWord = '';
+            const words = text.split(' ');
+            let wordIndex = 0;
+
+            function typeNextChar() {
+                if (wordIndex < words.length) {
+                    const word = words[wordIndex];
+
+                    // Handle line breaks at the start of words
+                    if (word === '\n') {
+                        currentLineDiv = document.createElement('div');
+                        currentLineDiv.className = 'intro-line';
+                        introDiv.appendChild(currentLineDiv);
+                        currentLineDiv.appendChild(cursor);
+                        wordIndex++;
+                        setTimeout(typeNextChar, 50);
+                        return;
+                    }
+
+                    if (charIndex < word.length) {
+                        // Type next character of current word
+                        const char = word[charIndex];
+                        const span = document.createElement('span');
+                        span.textContent = char;
+                        currentLineDiv.insertBefore(span, cursor);
+                        charIndex++;
+                        setTimeout(typeNextChar, 50);
+                    } else {
+                        // Word complete - add space if not last word
+                        if (wordIndex < words.length - 1 && words[wordIndex + 1] !== '\n') {
+                            const span = document.createElement('span');
+                            span.textContent = ' ';
+                            currentLineDiv.insertBefore(span, cursor);
+                        }
+                        charIndex = 0;
+                        wordIndex++;
+
+                        // Check if next word fits
+                        if (wordIndex < words.length && words[wordIndex] !== '\n') {
+                            const testDiv = currentLineDiv.cloneNode(true);
+                            testDiv.style.visibility = 'hidden';
+                            testDiv.style.position = 'absolute';
+                            const testSpan = document.createElement('span');
+                            testSpan.textContent = words[wordIndex];
+                            testDiv.appendChild(testSpan);
+                            introDiv.appendChild(testDiv);
+
+                            if (testDiv.offsetWidth > introDiv.offsetWidth - 40) {  // Account for padding
+                                // Create new line
+                                currentLineDiv = document.createElement('div');
+                                currentLineDiv.className = 'intro-line';
+                                introDiv.appendChild(currentLineDiv);
+                                currentLineDiv.appendChild(cursor);
+                            }
+                            testDiv.remove();
+                        }
+                        setTimeout(typeNextChar, 50);
+                    }
+                } else {
+                    // Done typing
+                    startButton.classList.add('show');
+                }
+            }
+
+            typeNextChar();
+        }
+
+
+        async function postScore(score) {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Mock API call
+            return fetch(API_ENDPOINTS.postScore, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionKey: gameState.sessionKey,
+                    quizId: gameState.currentQuiz.id,
+                    score: score
+                })
+            });
+        }
+
+        async function fetchLeaderboard() {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Mock leaderboard data
+            return leaderboardData = {
+                leaderboard: [
+                    { username: "PIXELMASTER_9000", score: 8200, social: "https://twitter.com/pixelmaster" },
+                    { username: "NINTENDOKNIGHT", score: 7500, social: "https://twitter.com/nintendoknight" },
+                    { username: "RETROGAMER_SUPREME_2024", score: 6800, social: "https://twitter.com/retrogamer" },
+                    { username: "ARCADE_CHAMPION_XX", score: 6500, social: "https://twitter.com/arcade" },
+                    { username: "8BIT_WARRIOR_ELITE", score: 6200, social: "https://twitter.com/8bit" }
+                ],
+                playerRank: 42, // Example rank from server
+                totalPlayers: 1337 // Optional: total number of players
+            };
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.body.innerHTML = ''; // Clear existing content
+            document.body.appendChild(errorDiv);
+        }
+
+
+
+
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+</body>
+
+</html>
