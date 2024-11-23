@@ -32,6 +32,7 @@ from atproto_oauth import (
     fetch_authserver_meta,
 )
 from atproto_security import is_safe_url
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 
