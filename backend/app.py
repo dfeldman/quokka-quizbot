@@ -57,7 +57,11 @@ app.wsgi_app = ProxyFix(
     x_prefix=1
 )
 
-
+app.config.update(
+    SESSION_COOKIE_DOMAIN='.dfeldman.org',  # Allow cookie to be read by all subdomains
+    SESSION_COOKIE_SECURE=True,  # Require HTTPS
+    SESSION_COOKIE_SAMESITE='Lax'  # Allow redirects while still being secure
+)
 
 # Helpers for managing database connection.
 # Note that you could use a sqlite ":memory:" database instead. In that case you would want to have a global sqlite connection, instead of re-connecting per connection. This file-based setup is following the Flask docs/tutorial.
@@ -128,8 +132,13 @@ def login_required(view):
 # Disable all CORS
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
+    # This is a bit tricky. If you use * as a wildcard, then credentials has no effect. So
+    # as a hack we just allow all origins by mirroring the requester's origin. Basically I 
+    # don't want to bother with CORS at all since this is just a game.
+    origin = request.headers.get('Origin')
+    response.headers.add('Access-Control-Allow-Origin', origin)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')  # This is crucial
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
@@ -149,10 +158,28 @@ def api_login_required(view):
         return view(**kwargs)
     return wrapped_view
 
+
+@app.route("/api/test-auth")
+@api_login_required  # This will verify the session
+def test_auth():
+    return jsonify({
+        "status": "ok",
+        "user": {
+            "did": g.user['did'],
+            "handle": g.user['handle']
+        },
+        "debug": {
+            "request_origin": request.headers.get('Origin'),
+            "session_user_did": session.get('user_did'),
+        }
+    })
+
+
 # Actual web routes start here!
-@app.route("/")
+@app.route("/quiz")
 def homepage():
     return render_template("home.html")
+
 
 
 # Every atproto OAuth client must have a public client metadata JSON document. It does not need to be at this specific path. The full URL to this file is the "client_id" of the app.
@@ -452,6 +479,12 @@ def submit_score():
     data = request.json
     quiz_id = data.get('quizId')
     quiz_url = data.get('quizUrl')
+    force = data.get('force')
+    if not force:
+        return jsonify({"error": {"code": "ALREADY_SUBMITTED", "message": "Score already submitted"}}), 409
+    else:
+        print("WARNING: Updating score in forced mode")
+        query_db("DELETE FROM quiz_scores WHERE did = ? AND quiz_id = ?", [g.user['did'], quiz_id])
 
     # Check if already submitted
     existing = query_db(
@@ -465,7 +498,7 @@ def submit_score():
     # Insert score
     try:
         query_db(
-            "INSERT INTO quiz_scores (did, quiz_id, quiz_url, score, answers) VALUES (?, ?, ?, ?)",
+            "INSERT INTO quiz_scores (did, quiz_id, quiz_url, score, answers) VALUES (?, ?, ?, ?, ?)",
             [g.user['did'], quiz_id, quiz_url, data["score"], json.dumps(data["answers"])]
         )
         return jsonify({
