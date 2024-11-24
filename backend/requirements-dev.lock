@@ -30,6 +30,8 @@ dnspython==2.6.1
     # via python-oauth-web-app
 flask==3.0.3
     # via python-oauth-web-app
+gunicorn==23.0.0
+    # via python-oauth-web-app
 idna==3.10
     # via requests
 importlib-metadata==8.5.0
@@ -47,6 +49,7 @@ mypy-extensions==1.0.0
     # via mypy
 packaging==24.2
     # via black
+    # via gunicorn
 pathspec==0.12.1
     # via black
 platformdirs==4.3.6

@@ -28,6 +28,8 @@ dnspython==2.6.1
     # via python-oauth-web-app
 flask==3.0.3
     # via python-oauth-web-app
+gunicorn==23.0.0
+    # via python-oauth-web-app
 idna==3.10
     # via requests
 importlib-metadata==8.5.0
@@ -39,6 +41,8 @@ jinja2==3.1.4
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
+packaging==24.2
+    # via gunicorn
 pycparser==2.22
     # via cffi
 python-dotenv==1.0.1

@@ -1,0 +1,154 @@
+{
+  "id": "2024-03-23-nintendo",
+  "startTime": "2024-03-23T15:00:00Z",
+  "endTime": "2024-03-24T14:59:59Z",
+  "introText": "WELCOME TO THE NINTENDO CLASSICS QUIZ!\n\nTODAY WE'RE TESTING YOUR KNOWLEDGE OF THE GREATEST NINTENDO GAMES AND CONSOLES. ARE YOU READY TO PROVE YOUR MASTERY OF GAMING HISTORY?",
+  "questions": [
+    {
+      "type": "multiple",
+      "question": "Which Nintendo character made their debut in the 1981 arcade game 'Donkey Kong'?",
+      "correct": "Mario",
+      "incorrect": ["Link", "Kirby", "Samus"]
+    },
+    {
+      "type": "numeric",
+      "question": "In what year was the original Nintendo Entertainment System (NES) released in North America?",
+      "correct": 1985,
+      "range": 2
+    },
+    {
+      "type": "sequence",
+      "question": "Put these Nintendo consoles in order of release, earliest first:",
+      "correct": ["NES", "Game Boy", "SNES", "Nintendo 64"],
+      "points": 1000
+    },
+    {
+      "type": "free",
+      "question": "What is the name of Mario's dinosaur companion who debuted in Super Mario World?",
+      "correct": "Yoshi"
+    },
+    {
+      "type": "multiple",
+      "question": "Which of these games was NOT included in Super Mario All-Stars?",
+      "correct": "Super Mario Land",
+      "incorrect": ["Super Mario Bros. 2", "Super Mario Bros. 3", "Lost Levels"]
+    }
+  ]
+}
+
+// 2024-03-24.json
+{
+  "id": "2024-03-24-arcade",
+  "startTime": "2024-03-24T15:00:00Z",
+  "endTime": "2024-03-25T14:59:59Z",
+  "introText": "WELCOME TO THE GOLDEN AGE OF ARCADES!\n\nPREPARE YOURSELF FOR A JOURNEY BACK TO THE NEON-LIT ARCADES OF THE 1980s. HOW MANY QUARTERS WOULD YOU HAVE SPENT TO MASTER THESE CLASSICS?",
+  "questions": [
+    {
+      "type": "multiple",
+      "question": "Which company created Pac-Man?",
+      "correct": "Namco",
+      "incorrect": ["Atari", "Sega", "Taito"]
+    },
+    {
+      "type": "sequence",
+      "question": "Arrange these arcade games in order of release, earliest first:",
+      "correct": ["Pong", "Space Invaders", "Pac-Man", "Dragon's Lair"],
+      "points": 1000
+    },
+    {
+      "type": "numeric",
+      "question": "How many ghosts chase Pac-Man in the original arcade game?",
+      "correct": 4,
+      "range": 0
+    },
+    {
+      "type": "free",
+      "question": "What color is the highest-point alien ship in Space Invaders?",
+      "correct": "Red"
+    },
+    {
+      "type": "multiple",
+      "question": "Which of these games did NOT use a joystick as its main control?",
+      "correct": "Tron",
+      "incorrect": ["Galaga", "Defender", "Dig Dug"]
+    }
+  ]
+}
+
+// 2024-03-25.json
+{
+  "id": "2024-03-25-sega",
+  "startTime": "2024-03-25T15:00:00Z",
+  "endTime": "2024-03-26T14:59:59Z",
+  "introText": "GET READY FOR SEGA GENESIS TRIVIA!\n\nDOES SEGA STILL DO WHAT NINTENDON'T? TEST YOUR KNOWLEDGE OF THE 16-BIT CONSOLE WARS ERA AND PROVE YOU'RE A TRUE GENESIS DOES!",
+  "questions": [
+    {
+      "type": "multiple",
+      "question": "What was Sonic the Hedgehog's original name during development?",
+      "correct": "Mr. Needlemouse",
+      "incorrect": ["Mr. Spike", "Fast Blue", "Speed Mouse"]
+    },
+    {
+      "type": "sequence",
+      "question": "Put these Sonic games in order of release, earliest first:",
+      "correct": ["Sonic the Hedgehog", "Sonic the Hedgehog 2", "Sonic CD", "Sonic & Knuckles"],
+      "points": 1000
+    },
+    {
+      "type": "numeric",
+      "question": "How many buttons were on the original Genesis/Mega Drive controller?",
+      "correct": 3,
+      "range": 0
+    },
+    {
+      "type": "free",
+      "question": "What was the name of the Genesis add-on that allowed CD games to be played?",
+      "correct": "Sega CD"
+    },
+    {
+      "type": "multiple",
+      "question": "Which of these was NOT a playable character in Streets of Rage 2?",
+      "correct": "Roo",
+      "incorrect": ["Axel", "Blaze", "Skate"]
+    }
+  ]
+}
+
+// 2024-03-26.json
+{
+  "id": "2024-03-26-playstation",
+  "startTime": "2024-03-26T15:00:00Z",
+  "endTime": "2024-03-27T14:59:59Z",
+  "introText": "WELCOME TO PLAYSTATION HISTORY!\n\nTHE ORIGINAL PLAYSTATION CHANGED GAMING FOREVER. LET'S SEE IF YOU REMEMBER THE REVOLUTION THAT STARTED IT ALL!",
+  "questions": [
+    {
+      "type": "multiple",
+      "question": "The PlayStation was originally meant to be an add-on for which console?",
+      "correct": "Super Nintendo",
+      "incorrect": ["Sega Genesis", "3DO", "Neo Geo"]
+    },
+    {
+      "type": "numeric",
+      "question": "What was the price of the PlayStation at launch in the US (in USD)?",
+      "correct": 299,
+      "range": 50
+    },
+    {
+      "type": "sequence",
+      "question": "Put these PlayStation classics in order of release, earliest first:",
+      "correct": ["Ridge Racer", "Tomb Raider", "Final Fantasy VII", "Metal Gear Solid"],
+      "points": 1000
+    },
+    {
+      "type": "free",
+      "question": "What was the name of the PlayStation's memory card unit (in MB)?",
+      "correct": "1MB"
+    },
+    {
+      "type": "multiple",
+      "question": "Which character was NOT a playable fighter in the original Tekken?",
+      "correct": "Lei Wulong",
+      "incorrect": ["Paul Phoenix", "Marshall Law", "King"]
+    }
+  ]
+}
