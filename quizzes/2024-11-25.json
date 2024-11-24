@@ -1,0 +1,127 @@
+{
+    "id": "test-funnycities",
+    "startTime": "2024-11-25T00:00:00Z",
+    "endTime": "2024-11-25T23:59:59Z",
+    "title": "Silly City Names Quiz",
+    "hint1": "Don't let the names fool you!",
+    "hint2": "Some of these places are more real than you think...",
+    "hint3": "Prepare for some chuckles!",
+    "introText": "WELCOME TO THE SILLY CITY NAMES QUIZ!\n\nPREPARE TO VISIT SOME OF THE WORLD'S MOST HILARIOUSLY NAMED PLACES! YES, THESE ARE ALL REAL LOCATIONS. NO, WE'RE NOT MAKING THESE UP.",
+    "questions": [
+      {
+        "type": "multiple",
+        "question": "In which country would you find the town of 'Batman'?",
+        "correct": "Turkey",
+        "incorrect": ["Australia", "Germany", "Canada"]
+      },
+      {
+        "type": "free",
+        "question": "What's the name of the small town in Austria that had to change its name from 'F*cking' in 2021?",
+        "correct": "Fugging"
+      },
+      {
+        "type": "multiple",
+        "question": "Which US state is home to the town of 'Truth or Consequences'?",
+        "correct": "New Mexico",
+        "incorrect": ["Arizona", "Nevada", "Texas"]
+      },
+      {
+        "type": "multiple",
+        "question": "The town of 'Sandwich' is located in which country?",
+        "correct": "England",
+        "incorrect": ["Ireland", "Scotland", "Wales"]
+      },
+      {
+        "type": "free",
+        "question": "What's the name of the Pennsylvania town that shares its name with a popular chocolate brand?",
+        "correct": "Hershey"
+      },
+      {
+        "type": "multiple",
+        "question": "Which country has a city called 'Dildo'?",
+        "correct": "Canada",
+        "incorrect": ["USA", "Australia", "New Zealand"]
+      },
+      {
+        "type": "sequence",
+        "question": "Order these real town names by population, smallest to largest: Boring (USA), Sandwich (UK), Batman (Turkey), Accident (USA)",
+        "correct": ["Accident", "Boring", "Sandwich", "Batman"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "The town of 'No Name' is located in which US state?",
+        "correct": "Colorado",
+        "incorrect": ["Nevada", "Idaho", "Montana"]
+      },
+      {
+        "type": "free",
+        "question": "What's the name of the Welsh village famous for having the longest place name in Europe?",
+        "correct": "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"
+      },
+      {
+        "type": "multiple",
+        "question": "Which country has both a 'Saint-Louis-du-Ha! Ha!' and a 'Ha! Ha! Bay'?",
+        "correct": "Canada",
+        "incorrect": ["France", "Belgium", "Switzerland"]
+      },
+      {
+        "type": "multiple",
+        "question": "The town of 'Why' is located in which US state?",
+        "correct": "Arizona",
+        "incorrect": ["Texas", "Oklahoma", "New Mexico"]
+      },
+      {
+        "type": "free",
+        "question": "What's the name of the Minnesota town that means 'Camp Kill Women' in Dakota Sioux?",
+        "correct": "Sleepy Eye"
+      },
+      {
+        "type": "multiple",
+        "question": "Which Australian territory contains a place called 'Humpty Doo'?",
+        "correct": "Northern Territory",
+        "incorrect": ["Western Australia", "Queensland", "Tasmania"]
+      },
+      {
+        "type": "sequence",
+        "question": "Order these towns from north to south: Chicken (Alaska), Moose Jaw (Saskatchewan), Cut and Shoot (Texas), Taumatawhakatangihangakoauauotamateapokaiwhenuakitanatahu (New Zealand)",
+        "correct": ["Chicken", "Moose Jaw", "Cut and Shoot", "Taumatawhakatangihangakoauauotamateapokaiwhenuakitanatahu"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "The town of 'Disappointment' is found in which country?",
+        "correct": "Australia",
+        "incorrect": ["Canada", "USA", "UK"]
+      },
+      {
+        "type": "numeric",
+        "question": "How many exclamation points are in the official name of 'Saint-Louis-du-Ha! Ha!'?",
+        "correct": 2,
+        "range": 0
+      },
+      {
+        "type": "multiple",
+        "question": "Which state contains both 'Rough and Ready' and 'Cool'?",
+        "correct": "California",
+        "incorrect": ["Oregon", "Washington", "Nevada"]
+      },
+      {
+        "type": "free",
+        "question": "What's the name of the Swedish village that shares its name with a common computer keyboard character?",
+        "correct": "Å"
+      },
+      {
+        "type": "multiple",
+        "question": "The town of 'Weed' is located in which US state?",
+        "correct": "California",
+        "incorrect": ["Oregon", "Colorado", "Washington"]
+      },
+      {
+        "type": "multiple",
+        "question": "Which country has a town called 'Dull' that is twinned with 'Boring', Oregon?",
+        "correct": "Scotland",
+        "incorrect": ["England", "Ireland", "Wales"]
+      }
+    ]
+  }

@@ -1,0 +1,128 @@
+{
+    "id": "test-horror50s",
+    "startTime": "2024-11-24T00:00:00Z",
+    "endTime": "2024-11-24T23:59:59Z",
+    "title": "Creature Feature Quiz: 1950s Edition",
+    "hint1": "Don't let the cheesy effects fool you!",
+    "hint2": "Some of these monsters are more famous than others...",
+    "hint3": "Don't get too scared!",
+    "introText": "WELCOME TO THE CREATURE FEATURE QUIZ: 1950s EDITION!\n\nGRAB YOUR POPCORN AND HIDE BEHIND THE COUCH AS WE EXPLORE THE DELIGHTFULLY CHEESY WORLD OF 1950s HORROR.",
+    "questions": [
+      {
+        "type": "multiple",
+        "question": "What color was the original 'Blob' in the 1958 classic?",
+        "correct": "Red",
+        "incorrect": ["Green", "Purple", "Blue"]
+      },
+      {
+        "type": "multiple",
+        "question": "Which future 'Star Trek' star faced off against the titular creature in 'Them!' (1954)?",
+        "correct": "Leonard Nimoy",
+        "incorrect": ["William Shatner", "DeForest Kelley", "James Doohan"]
+      },
+      {
+        "type": "numeric",
+        "question": "How tall was the creature in 'Attack of the 50 Foot Woman' (1958)?",
+        "correct": 50,
+        "range": 0
+      },
+      {
+        "type": "multiple",
+        "question": "What household item could supposedly kill the aliens in 'War of the Worlds' (1953)?",
+        "correct": "Water",
+        "incorrect": ["Salt", "Vinegar", "Soap"]
+      },
+      {
+        "type": "free",
+        "question": "What animal was enlarged to create the monsters in 'Them!'?",
+        "correct": "Ants"
+      },
+      {
+        "type": "multiple",
+        "question": "Which 1950s horror film featured a creature made partly from tobacco plants?",
+        "correct": "From Hell It Came",
+        "incorrect": ["The Thing", "Creature from the Black Lagoon", "The Monster That Challenged the World"]
+      },
+      {
+        "type": "sequence",
+        "question": "Put these 1950s horror films in order of release, earliest first:",
+        "correct": ["The Thing from Another World", "House of Wax", "Creature from the Black Lagoon", "The Fly"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "What was the occupation of the main character in 'The Fly' (1958)?",
+        "correct": "Scientist",
+        "incorrect": ["Detective", "Doctor", "Professor"]
+      },
+      {
+        "type": "free",
+        "question": "What famous horror actor played Baron Victor von Frankenstein in 'The Curse of Frankenstein' (1957)?",
+        "correct": "Peter Cushing"
+      },
+      {
+        "type": "multiple",
+        "question": "In 'Plan 9 from Outer Space' (1959), what were the aliens trying to prevent humans from creating?",
+        "correct": "Solarbonite",
+        "incorrect": ["Time Machine", "Death Ray", "Mind Control Device"]
+      },
+      {
+        "type": "numeric",
+        "question": "How many eyes did the mutant have in 'The Crawling Eye' (1958)?",
+        "correct": 1,
+        "range": 0
+      },
+      {
+        "type": "multiple",
+        "question": "What unique feature did the monster in 'The Monolith Monsters' (1957) have?",
+        "correct": "It was crystalline",
+        "incorrect": ["It was invisible", "It was liquid", "It was gaseous"]
+      },
+      {
+        "type": "free",
+        "question": "What famous makeup artist created the Creature from the Black Lagoon's iconic look?",
+        "correct": "Bud Westmore"
+      },
+      {
+        "type": "multiple",
+        "question": "In 'Tarantula' (1955), what substance caused the spider's gigantic growth?",
+        "correct": "Nutrient Formula",
+        "incorrect": ["Radiation", "Alien Spores", "Chemical Waste"]
+      },
+      {
+        "type": "sequence",
+        "question": "Order these Hammer Horror films by release date, earliest first:",
+        "correct": ["The Quatermass Xperiment", "X the Unknown", "The Curse of Frankenstein", "Horror of Dracula"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "What was unique about the filming of 'House of Wax' (1953)?",
+        "correct": "It was the first color 3-D film from a major studio",
+        "incorrect": ["It was shot entirely underwater", "It was filmed in complete darkness", "It used no artificial lighting"]
+      },
+      {
+        "type": "free",
+        "question": "What legendary B-movie director made 'Robot Monster' (1953)?",
+        "correct": "Phil Tucker"
+      },
+      {
+        "type": "multiple",
+        "question": "In 'The Beast from 20,000 Fathoms' (1953), what awakened the prehistoric monster?",
+        "correct": "Nuclear Testing",
+        "incorrect": ["Earthquake", "Volcanic Eruption", "Oil Drilling"]
+      },
+      {
+        "type": "numeric",
+        "question": "How many different monsters appeared in 'Monster on the Campus' (1958)?",
+        "correct": 3,
+        "range": 0
+      },
+      {
+        "type": "multiple",
+        "question": "What was the budget of 'Plan 9 from Outer Space' (1959)?",
+        "correct": "$60,000",
+        "incorrect": ["$100,000", "$250,000", "$500,000"]
+      }
+    ]
+  }

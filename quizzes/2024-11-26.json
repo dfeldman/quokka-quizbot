@@ -1,0 +1,128 @@
+{
+    "id": "test-funnycities",
+    "startTime": "2024-11-26T00:00:00Z",
+    "endTime": "2024-11-26T23:59:59Z",
+    "title": "Silly City Names Quiz",
+    "hint1": "Don't let the names fool you!",
+    "hint2": "Some of these places are more real than you think...",
+    "hint3": "Prepare for some chuckles!",
+    "introText": "WELCOME TO THE WACKY ARCHITECTURE QUIZ!\n\nGET READY TO EXPLORE THE WORLD'S STRANGEST STRUCTURES! FROM BUILDINGS THAT DANCE TO HOUSES THAT DEFY GRAVITY, THESE ARCHITECTURAL ODDITIES WILL MAKE YOU QUESTION EVERYTHING YOU KNOW ABOUT CONSTRUCTION. HARD HATS ON!",
+    "questions": [
+      {
+        "type": "multiple",
+        "question": "Which city features the famous 'Dancing House' that appears to be moving?",
+        "correct": "Prague",
+        "incorrect": ["Vienna", "Budapest", "Warsaw"]
+      },
+      {
+        "type": "multiple",
+        "question": "The Crooked House (Krzywy Domek) is located in which country?",
+        "correct": "Poland",
+        "incorrect": ["Germany", "Netherlands", "Denmark"]
+      },
+      {
+        "type": "numeric",
+        "question": "How many apartments are in Montreal's famous 'Habitat 67' building complex?",
+        "correct": 354,
+        "range": 10
+      },
+      {
+        "type": "multiple",
+        "question": "What everyday object does Taiwan's National Theater and Concert Hall resemble?",
+        "correct": "Basket",
+        "incorrect": ["Hat", "Bowl", "Box"]
+      },
+      {
+        "type": "free",
+        "question": "What animal does the famous Elephant Building in Bangkok look like?",
+        "correct": "Elephant"
+      },
+      {
+        "type": "multiple",
+        "question": "Which city has a skyscraper known as 'The Gherkin'?",
+        "correct": "London",
+        "incorrect": ["New York", "Dubai", "Shanghai"]
+      },
+      {
+        "type": "sequence",
+        "question": "Order these unusual buildings by completion date, earliest first:",
+        "correct": ["Casa Batlló", "Kansas City Public Library Parking Garage", "Dancing House", "Lotus Temple"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "What vegetable does China's 'Oriental Pearl Tower' supposedly resemble?",
+        "correct": "Onion",
+        "incorrect": ["Carrot", "Turnip", "Radish"]
+      },
+      {
+        "type": "free",
+        "question": "What does the Longaberger Company headquarters in Ohio look like?",
+        "correct": "Basket"
+      },
+      {
+        "type": "multiple",
+        "question": "The building known as 'Robot Building' is located in which city?",
+        "correct": "Bangkok",
+        "incorrect": ["Tokyo", "Seoul", "Singapore"]
+      },
+      {
+        "type": "multiple",
+        "question": "Which famous architect designed the house that appears to be 'melting' in Prague?",
+        "correct": "Frank Gehry",
+        "incorrect": ["Zaha Hadid", "Norman Foster", "Rem Koolhaas"]
+      },
+      {
+        "type": "free",
+        "question": "What natural phenomenon inspired the twisting design of Shanghai Tower?",
+        "correct": "Tornado"
+      },
+      {
+        "type": "multiple",
+        "question": "The 'Upside Down House' in Szymbark is located in which country?",
+        "correct": "Poland",
+        "incorrect": ["Russia", "Ukraine", "Czech Republic"]
+      },
+      {
+        "type": "sequence",
+        "question": "Order these buildings by height, shortest to tallest:",
+        "correct": ["Basket Building", "Dancing House", "Robot Building", "Gherkin"],
+        "points": 1000
+      },
+      {
+        "type": "multiple",
+        "question": "Which city features a library parking garage designed to look like giant books?",
+        "correct": "Kansas City",
+        "incorrect": ["Seattle", "Portland", "Boston"]
+      },
+      {
+        "type": "numeric",
+        "question": "How many degrees is the Crooked Little House in Poland tilted?",
+        "correct": 48,
+        "range": 5
+      },
+      {
+        "type": "multiple",
+        "question": "What household item does Beijing's CCTV Headquarters resemble?",
+        "correct": "Pants",
+        "incorrect": ["Shirt", "Hat", "Shoe"]
+      },
+      {
+        "type": "free",
+        "question": "What mode of transportation does the Ferdinand Cheval's 'Ideal Palace' in France feature a collection of?",
+        "correct": "Boats"
+      },
+      {
+        "type": "multiple",
+        "question": "The building known as 'The Big Basket' was headquarters for which company?",
+        "correct": "Longaberger",
+        "incorrect": ["Weaver's Pride", "Basket Case", "Container Store"]
+      },
+      {
+        "type": "multiple",
+        "question": "Which architect designed a house in California shaped like a giant seashell?",
+        "correct": "Javier Senosiain",
+        "incorrect": ["Antoni Gaudí", "Frank Lloyd Wright", "Le Corbusier"]
+      }
+    ]
+  }
