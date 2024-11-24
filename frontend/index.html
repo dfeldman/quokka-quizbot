@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Quiz Game</title>
+    <title>Quentin Quokka's Quizverse</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -814,13 +814,58 @@
             text-align: center;
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
         }
+
+        .end-button {
+            background-color: #1a1a1a;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 15px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .end-button:hover {
+            background-color: #00ff00;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .end-button:active {
+            transform: translateY(1px);
+        }
+
+        .end-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .end-button.post-score {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .end-button.home {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .end-button.home:hover {
+            background-color: #fff;
+        }
+
     </style>
 </head>
 
 <body>
     <div class="container">
         <div id="welcome-screen">
-            <img src="../logos/quokka-transparent.png" alt="quokka" class="game-logo" />
+            <img src="logos/quokka-transparent.png" alt="quokka" class="game-logo" />
             <h1>QUOKKA QUIZ</h1>
             <div class="intro-text"></div>
             <button class="submit-button start-button" onclick="startQuiz()">START GAME</button>
@@ -855,8 +900,9 @@
                         <span class="rank-suffix"></span>
                     </div>
                 </div>
-                <button class="end-button post-score" onclick="postScore()">POST SCORE</button>
-                <button class="end-button home" onclick="goHome()">EXIT TO BSKY.APP</button>
+                <button class="end-button follow" onclick="follow()">FOLLOW THE QUOKKA</button>
+                <button class="end-button post-score" onclick="postScoreToBsky()">POST SCORE</button>
+                <button class="end-button home" onclick="goHome()">EXEC BSKY.APP</button>
             </div>
         </div>
 
@@ -864,19 +910,21 @@
     <script>
 
         const gameState = {
-            sessionKey: null,
             username: null,
             currentQuiz: null,
             hasCompletedQuiz: false
         };
 
-        // At the top of our game code:
         const CONFIG = {
             // Default to production URLs
-            API_BASE_URL: 'https://example.com',
-            QUIZ_FILES_URL: 'https://example.com',
+            API_BASE_URL: 'https://labs.dfeldman.org/',
+            QUIZ_FILES_URL: 'https://webassets.dfeldman.org/labs/quokka/quizzes',
             FORCED_QUIZ: null  // Will be set if specified in URL
         };
+        // filled in later
+        API_ENDPOINTS = {};
+
+        ERROR_STATE = false;
 
         // Look for URL parameters that override these
         function initializeConfig() {
@@ -885,15 +933,18 @@
             // Allow overriding API base URL
             if (urlParams.get('apiUrl')) {
                 CONFIG.API_BASE_URL = urlParams.get('apiUrl');
+            } else {
+                CONFIG.API_BASE_URL = 'https://labs.dfeldman.org/';
             }
 
-            // Allow overriding quiz files location
+            // Directory to look for quizes
             if (urlParams.get('quizUrl')) {
                 CONFIG.QUIZ_FILES_URL = urlParams.get('quizUrl');
             }
 
+            // Just for testing, allow forcing the quiz to a certain file
             if (urlParams.get('testQuiz')) {
-                CONFIG.FORCED_QUIZ = urlParams.get('quiz');
+                CONFIG.FORCED_QUIZ = urlParams.get('testQuiz');
             }
 
             // Enhanced dev logging
@@ -901,44 +952,17 @@
                 API_BASE_URL: CONFIG.API_BASE_URL,
                 QUIZ_FILES_URL: CONFIG.QUIZ_FILES_URL,
                 FORCED_QUIZ: CONFIG.FORCED_QUIZ,
-                sessionKey: urlParams.get('sessionKey'),
                 username: urlParams.get('username')
             });
+            API_ENDPOINTS = {
+                checkCompletion: `${CONFIG.API_BASE_URL}/api/check-completion`,
+                postScore: `${CONFIG.API_BASE_URL}/api/scores`,
+                getLeaderboard: `${CONFIG.API_BASE_URL}/api/leaderboard`,
+                socialPost: `${CONFIG.API_BASE_URL}/api/social-post`,
+                checkLogin: `${CONFIG.API_BASE_URL}/api/test-auth`
+            };
+
         }
-
-        // Update our API_ENDPOINTS to use the configured base URL
-        const API_ENDPOINTS = {
-            checkCompletion: `${CONFIG.API_BASE_URL}/api/check-completion`,
-            postScore: `${CONFIG.API_BASE_URL}/api/post-score`,
-            getLeaderboard: `${CONFIG.API_BASE_URL}/api/leaderboard`,
-            socialPost: `${CONFIG.API_BASE_URL}/api/social-post`
-        };
-
-        const questions = [
-            {
-                type: "multiple",
-                question: "What was the first commercially successful video game?",
-                correct: "Pong",
-                incorrect: ["Space Invaders", "Pac-Man", "Donkey Kong"]
-            },
-            // {
-            //     type: "numeric",
-            //     question: "In what year was the first Nintendo Entertainment System released?",
-            //     correct: 1985,
-            //     range: 10 // Acceptable range for partial points
-            // },
-            // {
-            //     type: "sequence",
-            //     question: "Put these gaming consoles in order of release, earliest first:",
-            //     correct: ["NES", "SNES", "PlayStation", "Xbox"],
-            //     points: 1000
-            // },
-            // {
-            //     type: "free",
-            //     question: "What company created Mario?",
-            //     correct: "Nintendo"
-            // }
-        ];
 
         let currentQuestion = 0;
         let score = 0;
@@ -950,14 +974,14 @@
 
 
         function initializeGame() {
+            initializeConfig(); // run first
             try {
                 // Extract URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
-                gameState.sessionKey = urlParams.get('sessionKey');
                 gameState.username = urlParams.get('username');
 
-                if (!gameState.sessionKey || !gameState.username) {
-                    showError("Invalid session. Please log in again.");
+                if (!gameState.username) {
+                    showError("Invalid username. Please log in again.");
                     return;
                 }
 
@@ -966,21 +990,33 @@
                 document.getElementById('end-screen').style.display = 'none';
 
                 // Start initialization checks
-                checkGameAvailability();
+                if (! checkLogin()) return;
+                if (! checkGameAvailability()) return;
 
             } catch (error) {
                 showError("Failed to initialize game: " + error.message);
             }
         }
 
+        async function checkLogin() {
+            try {
+                const response = await fetch(`${API_ENDPOINTS.checkLogin}`, {credentials: 'include'});
+                if (!response.ok) {
+                    showError("Can't contact server");
+                    return false;
+                    console.log(response);
+                    throw new Error('Server error');
+                }
+                return true;
+            } catch (error) {
+                showError("Failed to check login");
+                throw error;
+            }
+        }
+
+
         async function checkGameAvailability() {
             try {
-                // Check if user has already completed today's quiz
-                if (await hasCompletedTodaysQuiz()) {
-                    showError("You have already completed today's quiz!");
-                    return;
-                }
-
                 // Get today's quiz
                 const quiz = await getTodaysQuiz();
                 if (!quiz) {
@@ -990,11 +1026,19 @@
 
                 gameState.currentQuiz = quiz;
 
+                // Check if user has already completed today's quiz
+                // This uses the ID so it requires the quiz actually exists
+                if ((! CONFIG.FORCED_QUIZ) && (await hasCompletedTodaysQuiz())) {
+                    showError("You have already completed today's quiz!");
+                    return;
+                }
+
                 // Check quiz timing
                 await checkQuizTiming();
 
             } catch (error) {
                 showError("Failed to check game availability: " + error.message);
+                throw error;
             }
         }
 
@@ -1025,7 +1069,8 @@
         async function hasCompletedTodaysQuiz() {
             try {
                 const params = new URLSearchParams({
-                    sessionKey: gameState.sessionKey
+                    username: gameState.username,
+                    quizId: gameState.currentQuiz.id
                 });
                 
                 // Add force parameter in forced quiz mode
@@ -1033,7 +1078,7 @@
                     params.append('force', 'true');
                 }
 
-                const response = await fetch(`${API_ENDPOINTS.checkCompletion}?${params}`);
+                const response = await fetch(`${API_ENDPOINTS.checkCompletion}?${params}`, {credentials: 'include'});
                 if (!response.ok) {
                     throw new Error('Failed to check completion status');
                 }
@@ -1052,7 +1097,7 @@
                 
                 if (CONFIG.FORCED_QUIZ) {
                     // Use specified quiz file
-                    quizUrl = `${CONFIG.QUIZ_FILES_URL}/${CONFIG.FORCED_QUIZ}.json`;
+                    quizUrl = `${CONFIG.FORCED_QUIZ}.json`;
                     console.log('Dev mode: Loading forced quiz:', quizUrl);
                 } else {
                     // Use today's date based on UTC
@@ -1064,7 +1109,7 @@
                 const response = await fetch(quizUrl);
                 
                 // Handle HTTP errors
-                if (response.status === 404) {
+                if (response.status === 404 || response.status === 403) {
                     console.error('No quiz found:', quizUrl);
                     return null;
                 }
@@ -1080,7 +1125,7 @@
                     console.error('Invalid quiz format:', quiz);
                     throw new Error('Invalid quiz format');
                 }
-                
+                quiz.url = quizUrl;
                 return quiz;
             } catch (error) {
                 console.error("Failed to fetch quiz:", error);
@@ -1111,7 +1156,7 @@
                 `;
                 
                 let bannerText = [];
-                if (CONFIG.API_BASE_URL !== 'https://api.retroquiz.com') {
+                if (CONFIG.API_BASE_URL !== 'https://labs.dfeldman.org/') {
                     bannerText.push(`API: ${CONFIG.API_BASE_URL}`);
                 }
                 if (CONFIG.FORCED_QUIZ) {
@@ -1124,18 +1169,18 @@
         }
 
         function logDevInfo() {
-    if (CONFIG.FORCED_QUIZ) {
-        console.log('DEV MODE enabled:', {
-            quiz: CONFIG.FORCED_QUIZ,
-            timeChecks: 'disabled',
-            completionCheck: 'force=true',
-            scorePosting: 'force=true',
-            quizStart: gameState.currentQuiz.startTime,
-            quizEnd: gameState.currentQuiz.endTime,
-            currentTime: new Date().toISOString()
-        });
-    }
-}
+            if (CONFIG.FORCED_QUIZ) {
+                console.log('DEV MODE enabled:', {
+                    quiz: CONFIG.FORCED_QUIZ,
+                    timeChecks: 'disabled',
+                    completionCheck: 'force=true',
+                    scorePosting: 'force=true',
+                    quizStart: gameState.currentQuiz.startTime,
+                    quizEnd: gameState.currentQuiz.endTime,
+                    currentTime: new Date().toISOString()
+                });
+            }
+        }
 
         async function checkQuizTiming() {
             const now = new Date();
@@ -1212,8 +1257,8 @@
 
 
         function showQuestion() {
-            const question = questions[currentQuestion];
-            document.querySelector('.question-count').textContent = `Question ${currentQuestion + 1}/${questions.length}`;
+            const question = gameState.currentQuiz.questions[currentQuestion];
+            document.querySelector('.question-count').textContent = `Question ${currentQuestion + 1}/${gameState.currentQuiz.questions.length}`;
             updateProgressBar();
 
             const questionElement = document.querySelector('.question');
@@ -1427,13 +1472,13 @@
         }
 
         function updateProgressBar() {
-            const progress = (currentQuestion / questions.length) * 100;
+            const progress = (currentQuestion / gameState.currentQuiz.questions.length) * 100;
             document.querySelector('.progress-fill').style.width = `${progress}%`;
         }
 
         function checkAnswer(answer) {
             clearInterval(timer);
-            const question = questions[currentQuestion];
+            const question = gameState.currentQuiz.questions[currentQuestion];
             let isCorrect = false;
             let points = 0;
 
@@ -1493,7 +1538,7 @@
 
             setTimeout(() => {
                 currentQuestion++;
-                if (currentQuestion < questions.length) {
+                if (currentQuestion < gameState.currentQuiz.questions.length) {
                     showQuestion();
                 } else {
                     showEndScreen();
@@ -1557,39 +1602,40 @@
 
             try {
                 // First post the score
-                if (newScore) {
-                    const params = new URLSearchParams({
-                        sessionKey: gameState.sessionKey,
+                const params = new URLSearchParams({
+                    quizId: gameState.currentQuiz.id,
+                });
+                
+                force = false;
+                if (CONFIG.FORCED_QUIZ) {
+                    force = true;
+                }
+
+                const scoreResponse = await fetch(`${API_ENDPOINTS.postScore}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        score: newScore,
                         quizId: gameState.currentQuiz.id,
-                    });
-                    
-                    if (CONFIG.FORCED_QUIZ) {
-                        params.append('force', 'true');
-                    }
+                        quizUrl: gameState.currentQuiz.url,
+                        answers: gameState.answers || [],
+                        force: force,
+                    })
+                });
 
-                    const scoreResponse = await fetch(`${API_ENDPOINTS.postScore}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            score: newScore,
-                            answers: gameState.answers || []
-                        })
-                    });
-
-                    if (!scoreResponse.ok) {
-                        throw new Error(`Failed to post score: ${scoreResponse.status}`);
-                    }
+                if (!scoreResponse.ok) {
+                    throw new Error(`Failed to post score: ${scoreResponse.status}`);
                 }
 
                 // Then fetch the updated leaderboard
-                const params = new URLSearchParams({
-                    sessionKey: gameState.sessionKey,
+                const paramsLeaderboard = new URLSearchParams({
                     quizId: gameState.currentQuiz.id
                 });
 
-                const response = await fetch(`${API_ENDPOINTS.getLeaderboard}?${params}`);
+                const response = await fetch(`${API_ENDPOINTS.getLeaderboard}?${paramsLeaderboard}`, {credentials: 'include'});
                 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch leaderboard: ${response.status}`);
@@ -1698,7 +1744,8 @@
             }
         }
 
-        function goHome() {
+        // For development only
+        function reset() {
             // Reset game state
             currentQuestion = 0;
             score = 0;
@@ -1715,7 +1762,20 @@
             document.querySelector('.post-score').style.color = '';
         }
 
+        function goHome() {
+            window.location = "https://bsky.app/";
+        }
 
+        function follow() {
+            window.location = "https://bsky.app/profile/quokkaquizzes.bsky.social"
+        }
+
+        function postScoreToBsky(score, rank) {
+            title = gameState.currentQuiz.title;
+            const message = "I played Quokka Quizzes and scored " + score + " points (rank " + rank + ")! Can you beat me? Try it yourself at https://labs.dfeldman.org/quiz! @quokkaquizzes.bsky.social";
+            const encodedMessage = encodeURIComponent(message);
+            window.location = `https://bsky.app/intent/compose?text=${encodedMessage}`;
+        }
 
         function createFirstPlaceParticles() {
             // Create celebratory particles around the first place entry
@@ -1852,7 +1912,6 @@
         async function postScore(score) {
             try {
                 const scoreData = {
-                    sessionKey: gameState.sessionKey,
                     quizId: gameState.currentQuiz.id,
                     score: score,
                     answers: gameState.answers // assuming we're tracking answers
@@ -1865,6 +1924,7 @@
 
                 const response = await fetch(API_ENDPOINTS.postScore, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -1883,12 +1943,146 @@
         }
 
         function showError(message) {
+            if (ERROR_STATE) return;
+            console.log("Showing error:" + message);
+            ERROR_STATE = true;
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
             errorDiv.textContent = message;
             document.body.innerHTML = ''; // Clear existing content
             document.body.appendChild(errorDiv);
         }
+
+        const SOUNDS = {
+            // Basic button clicks
+            buttonHover: {
+                type: "short electronic blip",
+                when: "On any button hover",
+                notes: "Subtle, 8-bit style, not annoying as it happens often"
+            },
+            
+            buttonClick: {
+                type: "positive click/select sound",
+                when: "On any button press",
+                notes: "Slightly more pronounced than hover, still quick"
+            },
+
+            // Typewriter effects
+            typewriter: {
+                type: "retro computer keyboard click",
+                when: "Each character during intro text and questions",
+                notes: "Very short, can repeat quickly, two alternating subtle variants"
+            },
+
+            // Question handling
+            questionAppear: {
+                type: "rising electronic tone",
+                when: "When new question appears",
+                notes: "Brief whoosh or rise, builds anticipation"
+            },
+
+            timerTick: {
+                type: "clock tick",
+                when: "Last 5 seconds of timer",
+                notes: "Urgent but not alarming, increases tension"
+            },
+
+            timeWarning: {
+                type: "alert beep",
+                when: "When timer reaches 10 seconds",
+                notes: "More noticeable than regular tick, signals urgency"
+            },
+
+            timeUp: {
+                type: "negative buzzer",
+                when: "When time runs out",
+                notes: "Distinct from incorrect answer sound"
+            },
+
+            // Answer feedback
+            correct: {
+                type: "victory jingle",
+                when: "Correct answer given",
+                notes: "Upbeat, celebratory, ~1 second long"
+            },
+
+            incorrect: {
+                type: "error sound",
+                when: "Wrong answer given",
+                notes: "Quick descending tone, not too harsh"
+            },
+
+            // Score and leaderboard
+            scoreCount: {
+                type: "coin or point sound",
+                when: "During score counting animation",
+                notes: "Classic arcade score sound, can repeat rapidly"
+            },
+
+            leaderboardEntry: {
+                type: "positive chime",
+                when: "Each leaderboard entry appears",
+                notes: "Ascending tones as entries appear from 5th to 1st"
+            },
+
+            firstPlace: {
+                type: "victory fanfare",
+                when: "User gets first place",
+                notes: "Longer celebration sound, most impressive sound in game"
+            },
+
+            // Game start/end
+            gameStart: {
+                type: "energetic startup sound",
+                when: "Pressing START GAME button",
+                notes: "Builds excitement, ~2 seconds"
+            },
+
+            gameComplete: {
+                type: "completion fanfare",
+                when: "Quiz finished",
+                notes: "Satisfying finish sound before score display"
+            }
+        };
+
+        // Example implementation for sound system:
+        const SoundManager = {
+            sounds: {},
+            
+            init() {
+                // Preload all sounds
+                Object.keys(SOUNDS).forEach(key => {
+                    this.sounds[key] = new Audio(`/sounds/${key}.mp3`);
+                    // Set volume levels based on sound type
+                    if (key === 'buttonHover' || key === 'typewriter') {
+                        this.sounds[key].volume = 0.3; // Quieter for frequent sounds
+                    }
+                });
+            },
+
+            play(soundName) {
+                if (this.sounds[soundName]) {
+                    // For quick repeating sounds, reset and play
+                    this.sounds[soundName].currentTime = 0;
+                    this.sounds[soundName].play().catch(e => console.log('Sound play prevented:', e));
+                }
+            },
+
+            // Special handler for rapid succession sounds (like typewriter or score counting)
+            playTyping() {
+                // Alternate between two slightly different typing sounds
+                const soundName = Math.random() < 0.5 ? 'typewriter1' : 'typewriter2';
+                this.play(soundName);
+            },
+
+            // For ascending leaderboard sounds
+            playLeaderboardEntry(position) {
+                // Play increasingly higher-pitched sounds for better positions
+                const sound = this.sounds['leaderboardEntry'];
+                sound.playbackRate = 0.8 + (position * 0.1); // Higher pitch for better positions
+                sound.play();
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', initializeGame);
 

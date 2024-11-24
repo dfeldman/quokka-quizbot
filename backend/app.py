@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import functools
+import time
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 from flask import (
@@ -33,8 +34,28 @@ from atproto_oauth import (
 )
 from atproto_security import is_safe_url
 from werkzeug.middleware.proxy_fix import ProxyFix
+from dotenv import load_dotenv
+import os
+import logging
+
+# This is needed only to run gunicorn in the current directory
+# In systemd, the variables come through systemd
+# TODO This should probably be deleted to avoid confusion
+load_dotenv() 
+
 
 app = Flask(__name__)
+app.logger.propagate = True
+# still not actually working 
+gunicorn_logger = logging.getLogger("gunicorn.error")
+app.logger.handlers = gunicorn_logger.handlers
+app.logger.setLevel(gunicorn_logger.level)
+
+# To do: Make the testQuiz parameter pass through to the client; this will make local testing a lot easier
+# Limit permissions, don't really need transition?
+# Add an unauthenticated leaderboard view 
+# Add a JSON dump of today's scores for the banter module
+# Back up the database somewhere...
 
 # Load this configuration from environment variables (which might mean a .env "dotenv" file)
 app.config.from_prefixed_env()
@@ -69,6 +90,7 @@ def get_db():
     db = getattr(g, "_database", None)
     if db is None:
         db_path = app.config.get("DATABASE_URL", "demo.sqlite")
+        print("THE DATABASE PATH IS", db_path)
         db = g._database = sqlite3.connect(db_path)
         db.row_factory = sqlite3.Row
     return db
@@ -175,10 +197,15 @@ def test_auth():
     })
 
 
-# Actual web routes start here!
+# The case where the user is already logged in and we want to redirect them to the quiz
 @app.route("/quiz")
+@login_required
 def homepage():
-    return render_template("home.html")
+    handle = g.user["handle"]
+    did = g.user["did"]
+    quiz_url = app.config.get("QUIZ_FRONTEND_URL", "https://webassets.dfeldman.org/labs/quokka/index.html")
+    api_url = request.url_root
+    return redirect(f"{quiz_url}?apiUrl={api_url}&username={handle}&did={did}")
 
 
 
@@ -386,9 +413,9 @@ def oauth_callback():
     session["user_did"] = did
     # Note that the handle might change over time, and should be re-resolved periodically in a real app
     session["user_handle"] = handle
-    quiz_url = app.config.get("QUIZ_FRONTEND_URL", "http://localhost:3000")
+    quiz_url = app.config.get("QUIZ_FRONTEND_URL", "https://webassets.dfeldman.org/labs/quokka/index.html")
     api_url = request.url_root
-    return redirect(f"{quiz_url}?apiUrl={api_url}&sessionKey={did}")
+    return redirect(f"{quiz_url}?apiUrl={api_url}&username={handle}&did={did}")
 
 
 # Example endpoint demonstrating manual refreshing of auth token.
@@ -459,8 +486,7 @@ def bsky_post():
 @api_login_required
 def check_completion():
     # Get today's quiz completion status
-    today = datetime.now().strftime("%Y-%m-%d")
-    quiz_id = f"quiz_{today}"
+    quiz_id = request.args.get("quizId")
     
     completion = query_db(
         "SELECT completed_at FROM quiz_scores WHERE did = ? AND quiz_id = ?",
@@ -473,6 +499,19 @@ def check_completion():
         "completedAt": completion["completed_at"] if completion else None
     })
 
+# Really should have a list of privileged users who can do this
+@app.route("/api/drop-my-score")
+@api_login_required
+def drop_my_score():
+    # Get today's quiz completion status
+    quiz_id = request.args.get("quizId")
+    
+    query_db("DELETE FROM quiz_scores WHERE did = ? AND quiz_id = ?", [g.user['did'], quiz_id])
+
+    return jsonify({
+        "completed": "true",
+    })
+
 @app.route("/api/scores", methods=["POST"])
 @api_login_required
 def submit_score():
@@ -480,18 +519,19 @@ def submit_score():
     quiz_id = data.get('quizId')
     quiz_url = data.get('quizUrl')
     force = data.get('force')
-    if not force:
-        return jsonify({"error": {"code": "ALREADY_SUBMITTED", "message": "Score already submitted"}}), 409
-    else:
+    if force:
         print("WARNING: Updating score in forced mode")
         query_db("DELETE FROM quiz_scores WHERE did = ? AND quiz_id = ?", [g.user['did'], quiz_id])
 
+    print("QUIZ ID", quiz_id)
+    print("did", g.user['did'])
     # Check if already submitted
     existing = query_db(
         "SELECT id FROM quiz_scores WHERE did = ? AND quiz_id = ?",
         [g.user['did'], quiz_id],
         one=True
     )
+    print("EXISTING", existing)
     if existing:
         return jsonify({"error": {"code": "ALREADY_SUBMITTED", "message": "Score already submitted"}}), 409
 
@@ -513,7 +553,7 @@ def submit_score():
 @api_login_required
 def get_leaderboard():
     quiz_id = request.args.get("quizId")
-    
+    # Should probably add a LIMIT here
     # Get leaderboard data
     scores = query_db("""
         SELECT s.score, s.did, o.handle as username
@@ -534,7 +574,44 @@ def get_leaderboard():
         leaderboard.append({
             "username": score["username"],
             "score": score["score"],
-            "social": None,  # Could be implemented to show BlueSky profile
+            # This field is the social link
+            "social": "https://bsky.app/profile/" + score["username"],  
+            # Just displays a little animation if this user is first
+            "isCurrentUser": score["did"] == g.user['did']
+        })
+    
+    return jsonify({
+        "quizId": quiz_id,
+        "totalPlayers": total_players,
+        "playerRank": player_rank,
+        "leaderboard": leaderboard
+    })
+
+# Primarily for the banter-bot
+@app.route("/api/full-leaderboard")
+def get_full_leaderboard():
+    quiz_id = request.args.get("quizId")
+    
+    # Get leaderboard data
+    scores = query_db("""
+        SELECT s.score, s.did, o.handle as username
+        FROM quiz_scores s
+        JOIN oauth_session o ON s.did = o.did
+        WHERE s.quiz_id = ?
+        ORDER BY s.score DESC, s.completed_at ASC
+    """, [quiz_id])
+    
+    player_rank = 0
+    leaderboard = []
+    total_players = len(scores)
+    
+    for idx, score in enumerate(scores, 1):
+        leaderboard.append({
+            "username": score["username"],
+            "score": score["score"],
+            # This field is the social link
+            "social": "https://bsky.app/profile/" + score["username"],  
+            # Just displays a little animation if this user is first
             "isCurrentUser": score["did"] == g.user['did']
         })
     

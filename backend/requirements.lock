@@ -47,6 +47,7 @@ pycparser==2.22
     # via cffi
 python-dotenv==1.0.1
     # via flask
+    # via python-oauth-web-app
 requests==2.32.3
     # via python-oauth-web-app
     # via requests-hardened
